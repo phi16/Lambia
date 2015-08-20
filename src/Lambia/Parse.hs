@@ -13,9 +13,10 @@ import Data.Attoparsec.ByteString
 {-
 
 Source := Declare* Expr?
-Declare := DeclName = Expr | Name? { Declare* }
+Declare := DeclName = Expr | Name { Declare* }
 Expr := { Declare* } Term | Term
-Term := \ Args . Term | Term Term | Var | (Term)
+Term := Term+
+ETerm := \ Args . Expr | Var | (Expr)
 Args := VarName+
 VarName := 'a-z' | Name
 DeclName := ('a-zA-Z')+
