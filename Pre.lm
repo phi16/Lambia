@@ -60,6 +60,8 @@ Pre{
 
     Pred = \nfx.n (\gh.h (g f)) (\u.x) (\u.u)
     Sub = \mn.n Pred m
+
+    open Primitive.Church
   }
   List {
     Cons = Pair
@@ -79,8 +81,10 @@ Pre{
     Length = Fix (\fl.If (Null l) 0 (Succ (f (Tail l))))
   }
   Integer {
+    open Primitive.Binary
   }
   Char {
+    open Primitive.Char
   }
   Eq {
   }
@@ -93,5 +97,6 @@ Pre{
     }
   }
   IO {
+    open Primitive.IO
   }
 }
