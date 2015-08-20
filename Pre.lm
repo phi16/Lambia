@@ -40,6 +40,12 @@ Pre{
     Either = \fgp.p f g
     Which = \p.p (\x.False) (\x.True)
   }
+  Maybe {
+    Nothing = \ef.e
+    Just = \xef.f x
+    Maybe = \efp.p e f
+    Exist = \p.p False (\x.True)
+  }
   Nat {
     0 = False
     Succ = \nxy.x (n x y) 
