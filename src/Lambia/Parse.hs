@@ -24,7 +24,7 @@ Var := VarName | (Name .)* Name
 
 -}
 
-data Term = Abst [ByteString] Term | Apply Term Term | Var ByteString deriving Show
+data Term = Abst [ByteString] Expr | Apply Term Term | Wrap Expr | Var ByteString deriving Show
 data Expr = Expr [Declare] Term deriving Show
 data Declare = Decl ByteString Expr | Scope ByteString [Declare] deriving Show
 data Source = Source [Declare] (Maybe Expr) deriving Show
@@ -98,31 +98,30 @@ expr x = (do
     justSpace x
     char8 '}'
     none
-    e <- term
-    lf
+    e <- term x
     return $ Expr ds e
   ) <|> (do
-    x <- term
-    return $ Expr [] x
+    t <- term x
+    return $ Expr [] t
   )
 
-term :: Parser Term
-term = do
-  ts <- many1 eTerm
+term :: Int -> Parser Term
+term x = do
+  ts <- many1 $ eTerm x
   return $ foldl1 Apply ts
 
-eTerm :: Parser Term
-eTerm = noneWrap $ (do
+eTerm :: Int -> Parser Term
+eTerm x = noneWrap $ (do
     char8 '\\'
     ss <- noneWrap args
     char8 '.'
-    t <- noneWrap term
+    t <- noneWrap $ expr x
     return $ Abst ss t
   ) <|> (do
     char8 '('
-    t <- noneWrap term
+    t <- noneWrap $ expr x
     char8 ')'
-    return t
+    return $ Wrap t
   ) <|> (do
     v <- var
     return $ Var v

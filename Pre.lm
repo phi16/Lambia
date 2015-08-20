@@ -63,12 +63,17 @@ Pre{
     Head = First
     Tail = Second
     Null = \l.l (\xye.False) True
+    Fold = Fix (\hfel.If (Null l) e (f (Head l) (h f e (Tail l))))
+    Unfold = Fix (\ufe.{
+      d = f e
+    } Cons (First d) (u f (Second d)))
+  }
+  Util {
     Index = \nl.Head (Iterate n Tail l)
     Map = Fix (\mfl.If (Null l) Nil (Cons (f (Head l)) (m f (Tail l))))
-    Fold = Fix (\hfel.If (Null l) e (f (Head l) (h f e (Tail l))))
-    Unfold = ?
     Nats = Fix (\n.Cons 0 (Map Succ n))
     Length = Fix (\fl.If (Null l) 0 (Succ (f (Tail l))))
+    Curry = \fxy.f (Pair x y)
+    Uncurry = \fp.f (First p) (Second p)
   }
 }
-
