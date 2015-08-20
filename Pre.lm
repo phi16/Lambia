@@ -32,18 +32,23 @@ Pre{
     Pair = \xyp.p x y
     First = \p.p True
     Second = \p.p False
+
     Swap = \px.p (Not x)
+    Curry = \fxy.f (Pair x y)
+    Uncurry = \fp.f (First p) (Second p)
   }
   Either {
     Left = \xfg.f x
     Right = \xfg.g x
     Either = \fgp.p f g
+
     Which = \p.p (\x.False) (\x.True)
   }
   Maybe {
     Nothing = \ef.e
     Just = \xef.f x
     Maybe = \efp.p e f
+
     Exist = \p.p False (\x.True)
   }
   Nat {
@@ -67,13 +72,27 @@ Pre{
     Unfold = Fix (\ufe.{
       d = f e
     } Cons (First d) (u f (Second d)))
-  }
-  Util {
+
+    Append = Fix (\pab.If (Null a) b (Cons (Head a) (p (Tail a) b)))
     Index = \nl.Head (Iterate n Tail l)
     Map = Fix (\mfl.If (Null l) Nil (Cons (f (Head l)) (m f (Tail l))))
     Nats = Fix (\n.Cons 0 (Map Succ n))
     Length = Fix (\fl.If (Null l) 0 (Succ (f (Tail l))))
-    Curry = \fxy.f (Pair x y)
-    Uncurry = \fp.f (First p) (Second p)
+  }
+  Char {
+  }
+  Integer {
+  }
+  Eq {
+  }
+  Ord {
+  }
+  Math {
+    Church {
+    }
+    Binary {
+    }
+  }
+  IO {
   }
 }
