@@ -1,18 +1,4 @@
 Pre{
-  Bool {
-    True = \xy.x
-    False = \xy.y
-    And = \pqxy.p (q x y) y
-    Or = \pqxy.p x (q x y)
-    Not = \pxy.p y x
-    If = \pte.p t e
-  }
-  Pair {
-    Pair = \xyp.p x y
-    First = \p.p True
-    Second = \p.p False
-    Swap = \p.Pair (Second p) (First p)
-  }
   Func {
     Id = \x.x
     Const = \xy.x
@@ -21,14 +7,33 @@ Pre{
     Fix = \f.(\x.f x x) (\x.f x x)
     Flip = \fxy.f y x
     App = \xf.f x
-  } 
+  }
+  Bool {
+    True = \xy.x
+    False = \xy.y
+    And = \pq.p q False
+    Or = \pq.p True q
+    Not = \pxy.p y x
+    If = \pte.p t e
+  }
+  Pair {
+    Pair = \xyp.p x y
+    First = \p.p True
+    Second = \p.p False
+    Swap = \px.p (Not x)
+  }
+  Either {
+    Left = \xfg.f x
+    Right = \xfg.g x
+    Either = \fgp.p f g
+    Which = \p.p (\x.False) (\x.True)
+  }
   Nat {
     0 = False
     Succ = \nxy.x (n x y) 
-    1 = Succ 0
     Add = \mnxy.n x (m x y)
-    Mul = \mnxy.n (m x) y
-    Pow = \mnxy.n m x y
+    Mul = \mnx.n (m x)
+    Pow = \mn.n m
     Zero = \n.n (\x.False) True
 
     Pred = \nfx.n (\gh.h (g f)) (\u.x) (\u.u)
@@ -43,6 +48,7 @@ Pre{
     Index = \nl.Head (Iterate n Tail l)
     Map = Fix (\mfl.If (Null l) Nil (Cons (f (Head l)) (m f (Tail l))))
     Fold = Fix (\hfel.If (Null l) e (f (Head l) (h f e (Tail l))))
+    Unfold = ?
     Nats = Fix (\n.Cons 0 (Map Succ n))
     Length = Fix (\fl.If (Null l) 0 (Succ (f (Tail l))))
   }
