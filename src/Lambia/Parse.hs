@@ -10,6 +10,8 @@ import Data.Word (Word8)
 import Data.ByteString (ByteString, singleton, cons, pack)
 import Data.Attoparsec.ByteString
 
+import Lambia.Types
+
 {-
 
 Source := Declare* Expr?
@@ -26,10 +28,13 @@ Var := VarName | ScopeName
 
 -}
 
-data Term = Abst [ByteString] Expr | Apply Term Term | Wrap Expr | Var ByteString deriving Show
-data Expr = Expr [Declare] Term deriving Show
-data Declare = Decl ByteString Expr | Scope Bool ByteString [Declare] | Open ByteString deriving Show
-data Source = Source [Declare] (Maybe Expr) deriving Show
+toW8 :: Char -> Word8
+toW8 = toEnum . fromEnum
+
+parseSource :: ByteString -> Either ByteString Source
+parseSource s = case parseOnly source s of
+  Left e -> Left (pack $ map toW8 e)
+  Right r -> Right r
 
 none :: Parser ()
 none = skipWhile (\x -> fromEnum x == fromEnum ' ')
