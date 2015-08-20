@@ -1,5 +1,5 @@
 Pre{
-  Func {
+  open Func {
     Id = \x.x
     Const = \xy.x
     Compose = \fgx.f (g x)
@@ -8,7 +8,7 @@ Pre{
     Flip = \fxy.f y x
     App = \xf.f x
   }
-  Combinator {
+  open Combinator {
     I = \x.x
     K = \xy.x
     S = \xyz.x z (y z)
@@ -19,7 +19,7 @@ Pre{
     Y = \f.(\x.f (x x)) (\x.f (x x))
     Z = \f.(\x.f (\y.x x y)) (\x.f (\y.x x y))
   }
-  Bool {
+  open Bool {
     True = \xy.x
     False = \xy.y
     And = \pq.p q False
@@ -27,7 +27,7 @@ Pre{
     Not = \pxy.p y x
     If = \pte.p t e
   }
-  Pair {
+  open Pair {
     Pair = \xyp.p x y
     First = \p.p True
     Second = \p.p False
@@ -36,21 +36,21 @@ Pre{
     Curry = \fxy.f (Pair x y)
     Uncurry = \fp.f (First p) (Second p)
   }
-  Either {
+  open Either {
     Left = \xfg.f x
     Right = \xfg.g x
     Either = \fgp.p f g
 
     Which = \p.p (\x.False) (\x.True)
   }
-  Maybe {
+  open Maybe {
     Nothing = \ef.e
     Just = \xef.f x
     Maybe = \efp.p e f
 
     Exist = \p.p False (\x.True)
   }
-  Nat {
+  open Nat {
     0 = False
     Succ = \nxy.x (n x y) 
     Add = \mnxy.n x (m x y)
@@ -63,7 +63,7 @@ Pre{
 
     open Primitive.Church
   }
-  List {
+  open List {
     Cons = Pair
     Nil = False
     Head = First
@@ -86,17 +86,17 @@ Pre{
   Char {
     open Primitive.Char
   }
-  Eq {
+  open Eq {
   }
-  Ord {
+  open Ord {
   }
-  Math {
+  open Math {
     Church {
     }
     Binary {
     }
   }
-  IO {
+  open IO {
     open Primitive.IO
   }
 }
