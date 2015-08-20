@@ -4,9 +4,21 @@ Pre{
     Const = \xy.x
     Compose = \fgx.f (g x)
     Iterate = \nfx.n f x
-    Fix = \f.(\x.f x x) (\x.f x x)
+    Fix = \f.(\x.f (x x)) (\x.f (x x))
+    < Fix = PRIMITIVE >
     Flip = \fxy.f y x
     App = \xf.f x
+  }
+  Combinator {
+    I = \x.x
+    K = \xy.x
+    S = \xyz.x z (y z)
+    B = \xyz.x (y z)
+    C = \xyz.x z y
+    W = \xy.x y y
+    X = \x.x S K
+    Y = \f.(\x.f (x x)) (\x.f (x x))
+    Z = \f.(\x.f (\y.x x y)) (\x.f (\y.x x y))
   }
   Bool {
     True = \xy.x
