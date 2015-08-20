@@ -53,74 +53,64 @@ lf = do
     choice $ map char8 ['\n','\r']
   return ()
 
-countSpace :: Int -> Parser Int
-countSpace x = do
-  replicateM x $ char8 ' '
-  ss <- many' $ char8 ' '
-  return $ x + length ss
-
-justSpace :: Int -> Parser ()
-justSpace x = void $ replicateM x $ char8 ' '
-
 source :: Parser Source
 source = do
   lf <|> return ()
-  ds <- many' $ decl 0
-  e <- choice [Just <$> expr 0, return Nothing]
+  ds <- many' $ decl
+  e <- choice [Just <$> expr, return Nothing]
   many' lf
   endOfInput
   return $ Source ds e
 
-decl :: Int -> Parser Declare
-decl x = (do
-    y <- countSpace x
+decl :: Parser Declare
+decl = (do
+    none
     n <- declName
     noneWrap $ char8 '='
-    e <- expr y
+    e <- expr
     lf
     return $ Decl n e
   ) <|> (do
-    y <- countSpace x
+    none
     n <- name
     noneWrap $ char8 '{'
     lf
-    ds <- many' $ decl (y+1)
+    ds <- many' decl
     none
     char8 '}'
     lf
     return $ Scope n ds
   )
 
-expr :: Int -> Parser Expr
-expr x = (do
+expr :: Parser Expr
+expr = (do
     noneWrap $ char8 '{'
     lf
-    ds <- many' $ decl (x+1)
-    justSpace x
+    ds <- many' decl
     char8 '}'
     none
-    e <- term x
+    e <- term
     return $ Expr ds e
   ) <|> (do
-    t <- term x
+    t <- term
     return $ Expr [] t
   )
 
-term :: Int -> Parser Term
-term x = do
-  ts <- many1 $ eTerm x
+term :: Parser Term
+term = do
+  ts <- many1 eTerm
   return $ foldl1 Apply ts
 
-eTerm :: Int -> Parser Term
-eTerm x = noneWrap $ (do
+eTerm :: Parser Term
+eTerm = noneWrap $ (do
     char8 '\\'
     ss <- noneWrap args
     char8 '.'
-    t <- noneWrap $ expr x
+    t <- noneWrap expr
     return $ Abst ss t
   ) <|> (do
     char8 '('
-    t <- noneWrap $ expr x
+    t <- noneWrap expr
     char8 ')'
     return $ Wrap t
   ) <|> (do
