@@ -143,14 +143,14 @@ eTerm = (do
 
 declName :: Parser ByteString
 declName = do
-  h <- satisfy $ inClass "a-zA-Z0-9"
-  hs <- takeWhile $ inClass "a-zA-Z0-9"
+  h <- satisfy $ inClass "-a-zA-Z0-9"
+  hs <- takeWhile $ inClass "-a-zA-Z0-9"
   return $ cons h hs
 
 name :: Parser ByteString
 name = do
-  h <- satisfy $ inClass "A-Z0-9"
-  hs <- takeWhile $ inClass "a-zA-Z0-9"
+  h <- satisfy $ inClass "-A-Z0-9"
+  hs <- takeWhile $ inClass "-a-zA-Z0-9"
   return $ cons h hs
 
 scopeName :: Parser ByteString
