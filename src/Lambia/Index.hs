@@ -6,6 +6,7 @@ import Prelude hiding (lookup)
 import Control.Monad.State.CPS
 import Control.Monad.Trans.Except
 import Control.Monad
+import Control.Applicative hiding (empty)
 import Data.ByteString hiding (append,empty,reverse)
 import qualified Data.ByteString as B
 import Data.Map.Strict hiding (split)
@@ -17,8 +18,11 @@ import Lambia.Types
 data Status = Status (S.Seq ByteString) Save Save
 type Local a = ExceptT ByteString (State Status) a
 
+nil :: Save
+nil = Save empty
+
 ini :: Status
-ini = Status S.empty empty empty
+ini = Status S.empty nil nil
 
 pass :: Status -> (Save, Save)
 pass (Status _ a b) = (a,b)
@@ -33,37 +37,39 @@ indexing (Source decls e) = let
     Right d -> Right (d,pass s)
 
 append :: S.Seq ByteString -> ByteString -> Lambda -> Save -> Local Save
-append q v e s = case S.viewl q of
-  S.EmptyL  -> return $ insert v (Value e) s
+append q v e (Save s) = Save <$> case S.viewl q of
+  S.EmptyL -> do
+    let u = lookup v s
+    case u of
+      Just w -> case snd w of
+        Just _ -> throwE $ "Duplicate variable : "`B.append`v
+        Nothing -> return $ insert v (fst w,Just e) s
+      Nothing -> return $ insert v (nil,Just e) s
   x S.:< xs -> case lookup x s of
-    Just (Scoping p) -> do
+    Just (p,t) -> do
       u <- append xs v e p
-      return $ insert x (Scoping u) s
-    Just (Value _) -> do
-      u <- append xs v e empty
-      return $ insert x (Scoping u) s
+      return $ insert x (u,t) s
     Nothing -> do
-      u <- append xs v e empty
-      return $ insert x (Scoping u) s
+      u <- append xs v e nil
+      return $ insert x (u,Nothing) s
 
 match :: [ByteString] -> Save -> Maybe Save
 match [] e = Just e
-match (x:xs) e = case lookup x e of
-  Just (Scoping y) -> match xs y
-  Just (Value v) -> match xs empty
+match (x:xs) (Save e) = case lookup x e of
+  Just (y,_) -> match xs y
   Nothing -> Nothing
 
 meld :: Entity -> Entity -> Entity
-meld (Scoping a) (Scoping b) = Scoping $ unionWith meld a b
-meld (Scoping a) (Value r) = Scoping a
-meld (Value r) _ = Value r
+meld (Save a,v) (Save b,w) = let
+    c = unionWith meld a b
+    x = v <|> w
+  in (Save c,x)
 
 merge :: [ByteString] -> Save -> Save -> Save
-merge [] l r = unionWith meld l r
-merge (x:xs) l r = case lookup x r of
-  Just (Scoping e) -> insert x (Scoping $ merge xs l e) r
-  Just (Value v) -> insert x (Scoping $ merge xs l empty) r
-  Nothing -> insert x (Scoping $ merge xs l empty) r
+merge [] (Save l) (Save r) = Save $ unionWith meld l r
+merge (x:xs) l (Save r) = Save $ case lookup x r of
+  Just (e,v) -> insert x (merge xs l e, v) r
+  Nothing -> insert x (merge xs l nil, Nothing) r
 
 ixDecl :: Declare -> Local ()
 ixDecl (Decl str e) = do
@@ -92,7 +98,7 @@ ixDecl (Open u) = do
     us = split (toW8 '.') u
   r <- case match us g of
     Just e -> return $ merge us e l
-    Nothing -> return $ merge us empty l -- throwE $ "Not a scope name : "`B.append`u
+    Nothing -> return $ merge us nil l -- throwE $ "Not a scope name : "`B.append`u
   put $ Status b g r
 
 ixExpr :: Expr -> Local Lambda

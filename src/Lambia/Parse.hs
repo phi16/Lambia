@@ -15,7 +15,7 @@ import Lambia.Types
 {-
 
 Source := Declare* Expr?
-Declare := DeclName = Expr | open? Name { Declare* } | open? ScopeName
+Declare := DeclName = Expr | open? Name? { Declare* } | open? ScopeName
 Expr := { Declare* } Term | Term
 Term := Term+
 ETerm := \ Args . Expr | Var | (Expr)

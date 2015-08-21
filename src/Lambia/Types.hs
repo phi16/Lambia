@@ -17,6 +17,6 @@ data Declare = Decl ByteString Expr | Scope Bool ByteString [Declare] | Open Byt
 data Source = Source [Declare] (Maybe Expr) deriving Show
 
 data Lambda = Lambda Lambda | App Lambda Lambda | Index Int | Prim ByteString deriving Show
-data Entity = Scoping Save | Value Lambda deriving Show
-type Save = Map ByteString Entity
+type Entity = (Save, Maybe Lambda)
+newtype Save = Save (Map ByteString Entity) deriving Show
 
