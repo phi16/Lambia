@@ -126,7 +126,7 @@ term = do
 
 eTerm :: Parser Term
 eTerm = (do
-    char8 '\\'
+    string "\\" <|> string "λ" <|> string (pack [206,187])
     ss <- noneWrap args
     char8 '.'
     t <- noneWrap expr
