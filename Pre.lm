@@ -3,12 +3,11 @@ Pre{
     Id = \x.x
     Const = \xy.x
     Compose = \fgx.f (g x)
-    Iterate = \nfx.n f x
     Fix = Primitive.Fix
     Flip = \fxy.f y x
     App = \xf.f x
   }
-  open Combinator {
+  Combinator {
     I = \x.x
     K = \xy.x
     S = \xyz.x z (y z)
@@ -25,6 +24,7 @@ Pre{
     And = \pq.p q False
     Or = \pq.p True q
     Not = \pxy.p y x
+    Xor = \pq.p (\xy.q y x) q
     If = \pte.p t e
   }
   open Pair {
@@ -53,6 +53,8 @@ Pre{
   open Nat {
     0 = False
     Succ = \nxy.x (n x y) 
+    Iterate = \nfx.n f x
+
     Add = \mnxy.n x (m x y)
     Mul = \mnx.n (m x)
     Pow = \mn.n m
@@ -61,7 +63,7 @@ Pre{
     Pred = \nfx.n (\gh.h (g f)) (\u.x) (\u.u)
     Sub = \mn.n Pred m
 
-    open Primitive.Church
+    open Primitive.Nat
   }
   open List {
     Cons = Pair
@@ -79,22 +81,36 @@ Pre{
     Map = Fix (\mfl.If (Null l) Nil (Cons (f (Head l)) (m f (Tail l))))
     Nats = Fix (\n.Cons 0 (Map Succ n))
     Length = Fix (\fl.If (Null l) 0 (Succ (f (Tail l))))
+    Zip = Fix (\zfab.If (Or (Null a) (Null b)) Nil ({
+      h = f (Head a) (Head b)
+      t = z f (Tail a) (Tail b)
+    } Cons h t))
+  }
+  Binary {
+    B = False
+    I = \pq.q True p
+    O = \pq.q False p
+    End = Null
+    Digit = Length
+    Bit {
+      And = Zip And
+      Or = Zip Or
+      Not = \b.Map Not b
+      Xor = Zip Xor
+    }
   }
   Integer {
-    open Primitive.Binary
+    open Primitive.Integer
   }
   Char {
     open Primitive.Char
   }
-  open Eq {
+  Decimal {
+    open Primitive.Decimal
   }
-  open Ord {
+  Eq {
   }
-  open Math {
-    Church {
-    }
-    Binary {
-    }
+  Ord {
   }
   open IO {
     open Primitive.IO
