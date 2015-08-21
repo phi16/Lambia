@@ -121,7 +121,7 @@ expr = (do
 
 term :: Parser Term
 term = do
-  ts <- noneWrap $ sepBy1 eTerm spaces
+  ts <- noneWrap $ sepBy1 eTerm none -- spaces? "x(y)"
   return $ foldl1 Apply ts
 
 eTerm :: Parser Term
@@ -178,3 +178,4 @@ args = many1 $ (do
   ) <|> (do
     fmap singleton $ satisfy (inClass "a-z")
   )
+
