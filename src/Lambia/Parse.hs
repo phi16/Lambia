@@ -55,7 +55,10 @@ spaces = char8 ' ' >> none
 lf :: Parser ()
 lf = do
   many1' $ do
-    none
+    (do
+      string "//"
+      takeWhile $ \x -> x`notElem`map toW8 ['\n','\r']
+      return ()) <|> none
     choice $ map char8 ['\n','\r']
   return ()
 
