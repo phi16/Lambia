@@ -16,7 +16,6 @@ Pre{
     W = \xy.x y y
     X = \x.x S K
     Y = \f.(\x.f (x x)) (\x.f (x x))
-    Z = \f.(\x.f (\y.x x y)) (\x.f (\y.x x y))
   }
   open Bool {
     True = \xy.x
