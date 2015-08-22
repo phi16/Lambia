@@ -7,6 +7,7 @@ import Control.Monad.State.CPS
 import Control.Monad.Trans.Except
 import Control.Monad
 import Control.Applicative hiding (empty)
+import Data.Char
 import Data.ByteString hiding (append,empty,reverse,foldr,last,elemIndex,head)
 import qualified Data.ByteString as B
 import Data.List (elemIndex)
@@ -95,7 +96,9 @@ ixDecl (Decl str e) = do
   Status g l <- get
   m <- ixExpr e
   let
-    g' = append str m g
+    g' = if isUpper $ toEnum $ fromEnum $ B.head str
+      then append str m g
+      else g
     l' = append str m l
   put $ Status g' l'
 ixDecl (Scope False str ds) = do
