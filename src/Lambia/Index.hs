@@ -96,9 +96,9 @@ ixDecl (Decl str e) = do
   Status g l <- get
   m <- ixExpr e
   let
-    g' = if isUpper $ B.head str
-      then append str m g
-      else g
+    g' = if isLower $ B.head str
+      then g
+      else append str m g
     l' = append str m l
   put $ Status g' l'
 ixDecl (Scope False str ds) = do
@@ -174,6 +174,6 @@ iT us (Var v) = case elemIndex v us of
         Just (s',_) -> search xs s'
         _ -> err
     if head us == "Primitive"
-      then return $ Lambda (Index 0) -- TODO
+      then return $ Prim v
       else search us l
 

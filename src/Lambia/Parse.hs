@@ -137,11 +137,11 @@ term = do
       x <- eTerm
       none
       xs <- many $ do
-        t <- term
+        t <- eTerm
         none
         return t
       return $ x:xs
-  ts <- s -- spaces1? "x(y)"
+  ts <- s
   return $ foldl1 Apply ts
 
 eTerm :: Parser Term
@@ -157,6 +157,7 @@ eTerm = (do
     char ')'
     return $ Wrap t
   ) <|> (do
+    notFollowedBy $ string "open"
     v <- var
     return $ Var v
   )
@@ -175,15 +176,24 @@ name = do
 
 scopeName :: Parser ByteString
 scopeName = do
-  xs <- sepBy1 name $ char '.'
-  return $ intercalate "." xs
+  x <- name
+  let
+    si = do
+      char '.'
+      x <- name
+      try ((x:) <$> si) <|> return [x]
+  xs <- try si <|> return []
+  return $ intercalate "." $ x:xs
 
 var :: Parser ByteString
 var = try (do
   s <- scopeName
-  char '.'
-  n <- declName
-  return $ concat [s,".",n]) <|> declName
+  try (do
+      char '.'
+      n <- declName
+      return $ concat [s,".",n]
+    ) <|> return s
+  ) <|> declName
 
 args :: Parser [ByteString]
 args = many1 $ (do
