@@ -8,8 +8,8 @@ import Control.Monad.Trans.Except
 import Control.Monad
 import Control.Applicative hiding (empty)
 import Data.Char
-import Data.ByteString hiding (append,empty,reverse,foldr,last,elemIndex,head)
-import qualified Data.ByteString as B
+import Data.ByteString.Char8 hiding (append,empty,reverse,foldr,last,elemIndex,head)
+import qualified Data.ByteString.Char8 as B
 import Data.List (elemIndex)
 import Data.Map.Strict hiding (split)
 import Data.Traversable
@@ -96,7 +96,7 @@ ixDecl (Decl str e) = do
   Status g l <- get
   m <- ixExpr e
   let
-    g' = if isUpper $ toEnum $ fromEnum $ B.head str
+    g' = if isUpper $ B.head str
       then append str m g
       else g
     l' = append str m l
@@ -120,9 +120,7 @@ ixDecl (Scope True str ds) = do
   put $ Status g''' l''
 ixDecl (Open u) = do
   Status g l <- get
-  let
-    toW8 = toEnum . fromEnum
-    us = split (toW8 '.') u
+  let us = split '.' u
   case match us g of
     Just (e,v) -> do
       let n = last us
@@ -165,8 +163,7 @@ iT us (Var v) = case elemIndex v us of
   Nothing -> do
     Status _ l <- get
     let
-      toW8 = toEnum . fromEnum
-      us = split (toW8 '.') v
+      us = split '.' v
       err = throwE $ "Not in scope : "`B.append`v
       search :: [ByteString] -> Save -> Local Lambda
       search [] s = err

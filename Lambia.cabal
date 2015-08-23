@@ -21,7 +21,7 @@ executable Lambia
   -- other-extensions:    
   build-depends:       base >=4.6 && <4.7,
                        bytestring,
-                       attoparsec,
+                       parsec,
                        containers,
                        transformers,
                        mtl-c

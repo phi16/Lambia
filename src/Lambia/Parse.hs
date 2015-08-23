@@ -2,13 +2,14 @@
 
 module Lambia.Parse where
 
-import Prelude hiding (takeWhile)
+import Prelude hiding (concat)
 import Control.Monad
-import Control.Applicative
+import Control.Applicative hiding (many,optional,(<|>))
 import Data.Char (ord)
-import Data.Word (Word8)
-import Data.ByteString (ByteString, singleton, cons, pack)
-import Data.Attoparsec.ByteString
+import Data.ByteString.Char8 (ByteString, singleton, cons, snoc, pack, intercalate, concat)
+import Text.Parsec
+import Text.Parsec.Char
+import Text.Parsec.ByteString
 
 import Lambia.Types
 
@@ -28,19 +29,13 @@ Var := VarName | ScopeName
 
 -}
 
-toW8 :: Char -> Word8
-toW8 = toEnum . fromEnum
-
 parseSource :: ByteString -> Either ByteString Source
-parseSource s = case parseOnly source s of
-  Left e -> Left (pack $ map toW8 e)
-  Right r -> Right r
+parseSource s = case parse source "<stdin>" $ s`snoc`'\n' of
+  Left err -> Left $ pack $ show err
+  Right e -> Right e
 
 none :: Parser ()
-none = skipWhile (\x -> fromEnum x == fromEnum ' ')
-
-char8 :: Char -> Parser Word8
-char8 c = word8 $ fromIntegral $ ord c
+none = void $ many $ char ' ' <|> char '\t'
 
 noneWrap :: Parser a -> Parser a
 noneWrap a = do
@@ -49,49 +44,53 @@ noneWrap a = do
   none
   return x
 
-spaces :: Parser ()
-spaces = char8 ' ' >> none
+spaces1 :: Parser ()
+spaces1 = (char ' ' <|> char '\t') >> none
 
 lf :: Parser ()
-lf = do
-  many1' $ do
-    (do
-      string "//"
-      takeWhile $ \x -> x`notElem`map toW8 ['\n','\r']
-      return ()) <|> none
-    choice $ map char8 ['\n','\r']
+lf = eof <|> do
+  let
+    l = let
+        a = try $ do
+          none
+          string "//"
+          manyTill anyChar $ try $ void endOfLine <|> eof
+          return ()
+        b = try $ do
+          none
+          void endOfLine
+        c = do
+          spaces1
+          eof
+      in choice [a,b,c]
+  l
+  manyTill l $ try $ eof <|> notFollowedBy l
   return ()
 
 source :: Parser Source
 source = do
-  lf <|> return ()
-  ds <- many' $ decl
-  e <- choice [Just <$> expr, return Nothing]
-  many' lf
-  endOfInput
+  try lf <|> return ()
+  (ds,e) <- let
+      du (xs,j) = try (do
+          e <- optionMaybe expr
+          lf
+          return (xs [],e)
+        ) <|> (do
+          d <- decl
+          du (xs . (d:), j))
+    in du (id,Nothing)
   return $ Source ds e
 
 decl :: Parser Declare
-decl = (do
-    none
-    n <- declName
-    noneWrap $ char8 '='
-    e <- expr
-    lf
-    return $ Decl n e
-  ) <|> (do
-    none
-    string "open"
-    spaces
+decl = (none>>) $ (do
+    try $ string "open" >> spaces1
     n <- scopeName
     none
     let
       d = do
-        char8 '{'
+        char '{'
         lf
-        ds <- many' decl
-        none
-        char8 '}'
+        ds <- manyTill decl $ try $ none >> char '}'
         lf
         return $ Scope True n ds
       e = do
@@ -99,22 +98,30 @@ decl = (do
         return $ Open n
     choice [d,e]
   ) <|> (do
-    n <- noneWrap name
-    char8 '{'
+    n <- try $ do
+      n' <- declName
+      noneWrap $ char '='
+      return n'
+    e <- expr
     lf
-    ds <- many' decl
+    return $ Decl n e
+  ) <|> (do
+    n <- name
     none
-    char8 '}'
+    char '{'
+    lf
+    ds <- manyTill decl $ try $ none >> char '}'
     lf
     return $ Scope False n ds
   )
 
 expr :: Parser Expr
-expr = (do
-    noneWrap $ char8 '{'
+expr = (none>>) $ (do
+    char '{'
+    none
     lf
-    ds <- many' decl
-    noneWrap $ char8 '}'
+    ds <- manyTill decl $ try $ none >> char '}'
+    none
     e <- term
     return $ Expr ds e
   ) <|> (do
@@ -124,20 +131,30 @@ expr = (do
 
 term :: Parser Term
 term = do
-  ts <- noneWrap $ sepBy1 eTerm none -- spaces? "x(y)"
+  none
+  let
+    s = do
+      x <- eTerm
+      none
+      xs <- many $ do
+        t <- term
+        none
+        return t
+      return $ x:xs
+  ts <- s -- spaces1? "x(y)"
   return $ foldl1 Apply ts
 
 eTerm :: Parser Term
 eTerm = (do
-    string "\\" <|> string "λ" <|> string (pack [206,187])
+    string "\\" <|> string "λ"
     ss <- noneWrap args
-    char8 '.'
+    char '.'
     t <- noneWrap expr
     return $ Abst ss t
   ) <|> (do
-    char8 '('
+    char '('
     t <- noneWrap expr
-    char8 ')'
+    char ')'
     return $ Wrap t
   ) <|> (do
     v <- var
@@ -146,39 +163,37 @@ eTerm = (do
 
 declName :: Parser ByteString
 declName = do
-  h <- satisfy $ inClass "-a-zA-Z0-9"
-  hs <- takeWhile $ inClass "-a-zA-Z0-9"
-  return $ cons h hs
+  h <- alphaNum <|> char '-'
+  hs <- many $ alphaNum <|> char '-'
+  return $ pack $ h:hs
 
 name :: Parser ByteString
 name = do
-  h <- satisfy $ inClass "-A-Z0-9"
-  hs <- takeWhile $ inClass "-a-zA-Z0-9"
-  return $ cons h hs
+  h <- upper <|> digit <|> char '-'
+  hs <- many $ alphaNum <|> char '-'
+  return $ pack $ h:hs
 
 scopeName :: Parser ByteString
 scopeName = do
-  str <- match $ do
-    many' $ name >> char8 '.'
-    name
-  return $ fst str
-   
+  xs <- sepBy1 name $ char '.'
+  return $ intercalate "." xs
+
 var :: Parser ByteString
-var = (do
-  str <- match $ do
-    many' $ name >> char8 '.'
-    declName
-  return $ fst str) <|> declName
+var = try (do
+  s <- scopeName
+  char '.'
+  n <- declName
+  return $ concat [s,".",n]) <|> declName
 
 args :: Parser [ByteString]
 args = many1 $ (do
     s <- name
-    x <- peekWord8
-    if x == Just (toEnum $ fromEnum $ ord '.')
+    x <- lookAhead anyChar
+    if x == '.'
       then return ()
-      else spaces
+      else spaces1
     return s
   ) <|> (do
-    fmap singleton $ satisfy (inClass "a-z")
+    fmap singleton lower
   )
 

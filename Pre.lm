@@ -1,4 +1,4 @@
-Pre{
+Pre {
   open Func {
     Id = \x.x
     Const = \xy.x
