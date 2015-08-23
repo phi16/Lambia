@@ -61,6 +61,12 @@ Pre {
 
     Pred = \nfx.n (\gh.h (g f)) (\u.x) (\u.u)
     Sub = \mn.n Pred m
+    Div = Fix (\dxy.{
+      u = Sub x y
+    } If (Zero u) 0 (Succ (d u y))
+    Mod = Fix (\mxy.{
+      u = Sub x y
+    } If (Zero u) x (m u y))
 
     open Primitive.Nat
   }
@@ -84,6 +90,15 @@ Pre {
       h = f (Head a) (Head b)
       t = z f (Tail a) (Tail b)
     } Cons h t))
+
+    Right {
+      Cons = \xsfe.f x (s f e)
+      Nil = False
+      Head = \s.s (\xy.x) False
+      Tail = \scn.s (\htg.g h (t c)) (\t.n) (\ht.t)
+      Null = \l.l (\xy.False) True
+      Fold = \sfe.s f e
+    }
   }
   Binary {
     B = False
