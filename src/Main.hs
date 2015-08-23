@@ -19,5 +19,6 @@ main = do
   case e of
     Left err -> B.putStrLn err
     Right t -> case t of
-      (Just l,_) -> putStrLn $ unlines $ map show $ apply l
+      (Just l,_) -> print $ fst $ apply l
+      -- (Just l,_) -> putStrLn $ unlines $ map show $ snd $ apply l
       _ -> print t

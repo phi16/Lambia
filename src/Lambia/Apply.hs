@@ -4,10 +4,12 @@ import Data.Map
 
 import Lambia.Types
 
-apply :: Lambda -> [Lambda]
+apply :: Lambda -> (Lambda, [Lambda])
 apply l = case beta l 0 empty of
-  (False,l',_) -> [l]
-  (True,l',_) -> l:apply l'
+  (False,l',_) -> (l,[l])
+  (True,l',_) -> let
+      (x,xy) = apply l'
+    in (x,l:xy)
 
 beta :: Lambda -> Int -> Map Int Bool -> (Bool, Lambda, Map Int Bool)
 beta (Lambda l) d p = let

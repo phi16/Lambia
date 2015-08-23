@@ -120,8 +120,10 @@ ixDecl (Scope True str ds) = do
   put $ Status g''' l''
 ixDecl (Open u) = do
   Status g l <- get
-  let us = split '.' u
-  case match us g of
+  let
+    us = split '.' u
+    r = match us l <|> match us g
+  case r of
     Just (e,v) -> do
       let n = last us
       l' <- merge [] e l

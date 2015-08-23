@@ -61,12 +61,12 @@ Pre {
 
     Pred = \nfx.n (\gh.h (g f)) (\u.x) (\u.u)
     Sub = \mn.n Pred m
-    Div = Fix (\dxy.{
+    Div = \pq.Fix (\dxy.{
       u = Sub x y
-    } If (Zero u) 0 (Succ (d u y)))
-    Mod = Fix (\mxy.{
+    } If (Zero u) 0 (Succ (d u y))) (Succ p) q
+    Mod = \pq.Pred (Fix (\mxy.{
       u = Sub x y
-    } If (Zero u) x (m u y))
+    } If (Zero u) x (m u y)) (Succ p) q)
 
     open Primitive.Nat
   }
@@ -129,7 +129,21 @@ Pre {
     open Primitive.IO
   }
 }
-open Pre
+Verify {
+  open Pre
+  1 = Succ 0
+  2 = Succ 1
+  3 = Succ 2
+  4 = Succ 3
+  5 = Succ 4
+  6 = Succ 5
+  7 = Succ 6
+  Fact = Fix (\fn.If (Zero n) (Succ 0) (Mul n (f (Pred n))))
 
-Fact = Fix (\fn.If (Zero n) (Succ 0) (Mul n (f (Pred n))))
-Fact (Succ (Succ (Succ 0)))
+  V0 = Eq.Nat 3 (Add 2 1)
+  V1 = Eq.Nat 6 (Mul (Sub 3 1) (Mod 7 4))
+  V2 = Eq.Nat 6 (Fact (Succ (Succ (Succ 0))))
+  V3 = Eq.Nat 7 (Add (Mul (Div 7 3) 3) (Mod 7 3))
+}
+open Verify
+And (And (And V0 V1) V2) V3
