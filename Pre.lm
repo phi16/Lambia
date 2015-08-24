@@ -93,11 +93,12 @@ Pre {
 
     Left {
       Cons = \xsfe.f x (s f e)
+      Snoc = \xsfe.s f (f x e)
       Nil = False
       Head = \s.s (\xy.x) False
       Tail = \scn.s (\htg.g h (t c)) (\t.n) (\ht.t)
       Null = \l.l (\xy.False) True
-      Fold = \sfe.s f e
+      Fold = \fes.s f e
     }
   }
   Binary {
