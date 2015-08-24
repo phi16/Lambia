@@ -91,7 +91,7 @@ Pre {
       t = z f (Tail a) (Tail b)
     } Cons h t))
 
-    Right {
+    Left {
       Cons = \xsfe.f x (s f e)
       Nil = False
       Head = \s.s (\xy.x) False
