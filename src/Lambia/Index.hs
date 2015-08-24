@@ -17,6 +17,7 @@ import Data.Maybe (isJust)
 import qualified Data.Sequence as S
 
 import Lambia.Types
+import Lambia.Apply
 
 data Status = Status Save Save
 type Local a = ExceptT ByteString (State Status) a
@@ -138,7 +139,7 @@ ixDecl (Open u) = do
       else throwE $ "Not a scope name : "`B.append`u
 
 ixExpr :: Expr -> Local Lambda
-ixExpr e = iE [] e
+ixExpr e = simple <$> iE [] e
 
 iE :: [ByteString] -> Expr -> Local Lambda
 iE us (Expr decls t) = do

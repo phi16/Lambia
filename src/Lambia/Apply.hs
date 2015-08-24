@@ -5,9 +5,23 @@ import Data.Map
 
 import Lambia.Types
 
+simple :: Lambda -> Lambda
+simple l = s l 100 where
+  s :: Lambda -> Int -> Lambda
+  s e 0
+    | size e < size l = e
+    | otherwise = l
+  s e x = case beta e 0 empty of
+    (False,_,_) -> s e 0
+    (True,e',_) -> s e' (x-1)
+  size :: Lambda -> Int
+  size (Lambda x) = 1 + size x
+  size (App l r) = size l + size r
+  size _ = 1
+
 apply :: Lambda -> (Lambda, [Lambda])
 apply l = case beta l 0 empty of
-  (False,l',_) -> (l,[l])
+  (False,_,_) -> (l,[l])
   (True,l',_) -> let
       (x,xy) = apply l'
     in (x,l:xy)
