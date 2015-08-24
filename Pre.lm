@@ -100,6 +100,12 @@ Pre {
       Null = \l.l (\xy.False) True
       Fold = \fes.s f e
     }
+
+    [ = \ec.c (Left.Cons e Left.Nil)
+    , = \lec.c (Left.Snoc e l)
+    ] = \lc.c l
+    AsList = \l.l Pair Nil
+    AsFold = \l.l
   }
   Binary {
     B = False
@@ -145,6 +151,7 @@ Verify {
   V1 = Eq.Nat 6 (Mul (Sub 3 1) (Mod 7 4))
   V2 = Eq.Nat 6 (Fact (Succ (Succ (Succ 0))))
   V3 = Eq.Nat 7 (Add (Mul (Div 7 3) 3) (Mod 7 3))
+  V4 = Eq.Nat 6 ([ 1 , 2 , 3 ] AsFold Add 0)
 }
 open Verify
-And (And (And V0 V1) V2) V3
+[ V0 , V1 , V2 , V3 , V4 ] AsFold And True

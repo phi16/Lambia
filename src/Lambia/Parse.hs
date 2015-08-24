@@ -163,10 +163,13 @@ eTerm = (do
     return $ Var v
   )
 
+signs :: Parser Char
+signs = choice $ map char "-[,]"
+
 declName :: Parser ByteString
 declName = do
-  h <- alphaNum <|> char '-'
-  hs <- many $ alphaNum <|> char '-'
+  h <- alphaNum <|> signs
+  hs <- many $ alphaNum <|> signs
   return $ pack $ h:hs
 
 name :: Parser ByteString
