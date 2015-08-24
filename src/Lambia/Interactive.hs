@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Lambia.Interactive where
+module Lambia.Interactive (interactive) where
 
 import Prelude hiding (getLine, putStr, putStrLn)
 import Data.ByteString.Char8 hiding (append)

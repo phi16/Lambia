@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Lambia.Index where
+module Lambia.Index (nil, indexing, append, ixDecl, ixExpr) where
 
 import Prelude hiding (lookup, foldr)
 import Control.Monad.State.CPS

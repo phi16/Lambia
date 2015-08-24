@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Lambia.Parse where
+module Lambia.Parse (parseSource, parseLines) where
 
 import Prelude hiding (concat)
 import Control.Monad

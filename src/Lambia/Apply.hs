@@ -1,4 +1,4 @@
-module Lambia.Apply where
+module Lambia.Apply (simple, apply) where
 
 import Prelude hiding (lookup)
 import Data.Map

@@ -1,6 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Lambia.Types where
+module Lambia.Types (
+  Term(..),Expr(..),Declare(..),Source(..),
+  Lambda(..),Entity,Save(..),Status(..)) where
 
 import Data.Char (ord,chr)
 import Data.Map.Strict hiding (map)
