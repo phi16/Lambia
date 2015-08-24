@@ -34,6 +34,14 @@ parseSource s = case parse source "<stdin>" $ s`snoc`'\n' of
   Left err -> Left $ pack $ show err
   Right e -> Right e
 
+parseLines :: ByteString -> Either ByteString (Either Declare Expr)
+parseLines s = let
+    pls :: Parser (Either Declare Expr)
+    pls = try (Left <$> decl) <|> (Right <$> (expr <* lf))
+  in case parse (pls <* eof) "<interactive>" $ s`snoc`'\n' of
+    Left err -> Left $ pack $ show err
+    Right e -> Right e
+
 none :: Parser ()
 none = void $ many $ char ' ' <|> char '\t'
 

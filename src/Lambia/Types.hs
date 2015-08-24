@@ -15,6 +15,8 @@ data Lambda = Lambda Lambda | App Lambda Lambda | Index Int | Prim ByteString
 type Entity = (Save, Maybe Lambda)
 newtype Save = Save (Map ByteString Entity) deriving Show
 
+data Status = Status Save Save
+
 lowerN :: Int -> Char
 lowerN n = chr $ n + ord 'a'
 

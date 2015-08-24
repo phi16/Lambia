@@ -5,12 +5,13 @@ import Data.Map
 
 import Lambia.Types
 
-simple :: Lambda -> Lambda
-simple l = s l 100 where
-  s :: Lambda -> Int -> Lambda
+simple :: Int -> Lambda -> (Bool,Lambda)
+simple n l = s l n where
+  s :: Lambda -> Int -> (Bool,Lambda)
   s e 0
-    | size e < size l = e
-    | otherwise = l
+    | size e == size l = (True,e)
+    | size e < size l = (True,snd $ simple n e)
+    | otherwise = (False,l)
   s e x = case beta e 0 empty of
     (False,_,_) -> s e 0
     (True,e',_) -> s e' (x-1)
