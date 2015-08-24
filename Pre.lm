@@ -5,7 +5,8 @@ Pre {
     Compose = \fgx.f (g x)
     Fix = \f.(\x.f (x x)) (\x.f (x x))
     Flip = \fxy.f y x
-    App = \xf.f x
+    App = \fx.f x
+    Give = \xf.f x
   }
   Combinator {
     I = \x.x
@@ -147,11 +148,13 @@ Verify {
   7 = Succ 6
   Fact = Fix (\fn.If (Zero n) (Succ 0) (Mul n (f (Pred n))))
 
-  V0 = Eq.Nat 3 (Add 2 1)
-  V1 = Eq.Nat 6 (Mul (Sub 3 1) (Mod 7 4))
-  V2 = Eq.Nat 6 (Fact (Succ (Succ (Succ 0))))
-  V3 = Eq.Nat 7 (Add (Mul (Div 7 3) 3) (Mod 7 3))
-  V4 = Eq.Nat 6 ([ 1 , 2 , 3 ] AsFold Add 0)
+  N0 = Eq.Nat 3 (Add 2 1)
+  N1 = Eq.Nat 6 (Mul (Sub 3 1) (Mod 7 4))
+  N2 = Eq.Nat 6 (Fact (Succ (Succ (Succ 0))))
+  N3 = Eq.Nat 7 (Add (Mul (Div 7 3) 3) (Mod 7 3))
+  N4 = Eq.Nat 6 ([ 1 , 2 , 3 ] AsFold Add False)
+  N = [ N0 , N1 , N2 , N3 , N4 ] AsFold And True
+
+  Verified = [ N ] AsFold And True
 }
-open Verify
-[ V0 , V1 , V2 , V3 , V4 ] AsFold And True
+Verify.Verified
