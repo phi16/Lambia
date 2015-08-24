@@ -79,6 +79,7 @@ source = do
           d <- decl
           du (xs . (d:), j))
     in du (id,Nothing)
+  eof
   return $ Source ds e
 
 decl :: Parser Declare
