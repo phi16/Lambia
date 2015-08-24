@@ -24,11 +24,13 @@ beta (Lambda l) d p = let
 beta (App l r) d p = case l of
   Lambda u -> (True,replace u 0 r,p)
   _        -> case beta l d p of
-    (True,l',m) -> (True,App l' r,m)
+    (True,l',m) -> case l' of
+      Lambda u' -> beta (App l' r) d m
+      _         -> (True,App l' r,m)
     (False,_,m) -> case beta r d m of
       (True,r',m') -> (True,App l r',m')
       (False,_,m') -> (False,App l r,m')
-beta (Index x) d p = (False, Index x, insertWith (+) (d-x) 1 p)
+beta (Index x) d p = (False,Index x,insertWith (+) (d-x) 1 p)
 
 decr :: Int -> Lambda -> Lambda
 decr x (Lambda l) = Lambda $ decr (x+1) l
