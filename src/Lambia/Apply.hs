@@ -1,5 +1,6 @@
 module Lambia.Apply where
 
+import Prelude hiding (lookup)
 import Data.Map
 
 import Lambia.Types
@@ -11,12 +12,15 @@ apply l = case beta l 0 empty of
       (x,xy) = apply l'
     in (x,l:xy)
 
-beta :: Lambda -> Int -> Map Int Bool -> (Bool, Lambda, Map Int Bool)
+beta :: Lambda -> Int -> Map Int Int -> (Bool, Lambda, Map Int Int)
 beta (Lambda l) d p = let
     (b,l',m) = beta l (d+1) p
-  in case l' of
-    -- App y (Index 0) -> if m have 0 then (decr 0 y,p)
-    _ -> (b,Lambda l',p)
+    u = delete d m
+  in case lookup d m of
+    Just 1 -> case l' of
+      App y (Index 0) -> (True,decr 0 y,u)
+      _ -> (b,Lambda l',u)
+    _ -> (b,Lambda l',u)
 beta (App l r) d p = case l of
   Lambda u -> (True,replace u 0 r,p)
   _        -> case beta l d p of
@@ -24,7 +28,7 @@ beta (App l r) d p = case l of
     (False,_,m) -> case beta r d m of
       (True,r',m') -> (True,App l r',m')
       (False,_,m') -> (False,App l r,m')
-beta (Index x) d p = (False, Index x, insert (x+d) True p)
+beta (Index x) d p = (False, Index x, insertWith (+) (d-x) 1 p)
 
 decr :: Int -> Lambda -> Lambda
 decr x (Lambda l) = Lambda $ decr (x+1) l
