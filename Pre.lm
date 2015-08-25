@@ -24,7 +24,8 @@ Pre {
     And = \pq.p q False
     Or = \pq.p True q
     Not = \pxy.p y x
-    Xor = \pq.p (\xy.q y x) q
+    Xor = \pq.p (Not q) q
+    Eqv = \pq.p q (Not q)
     If = \pte.p t e
   }
   open Pair {
@@ -73,8 +74,40 @@ Pre {
     Lt = \mn.Zero (Sub (Succ m) n)
     Ge = \mn.Zero (Sub n m)
     Gt = \mn.Zero (Sub (Succ n) m)
+    Eq = \mn.And (Le m n) (Ge m n)
 
     open Primitive.Nat
+  }
+  Int {
+    FromNat = \n.Pair n 0
+    O = FromNat 0
+    Normalize = \n.{
+      f = First n
+      s = Second n
+    } If (Ge f s) (Pair (Sub f s) 0) (Pair 0 (Sub s f))
+    ToNat = \n.First (Normalize n)
+    Abs = \n.Uncurry Add (Normalize n)
+    Pos = \n.Gt (First n) (Second n)
+    Neg = \n.Lt (First n) (Second n)
+    Z = \n.Eq (First n) (Second n)
+    Negate = Swap
+
+    Plus = \mn.Pair (Add (First m) (First n)) (Add (Second m) (Second n))
+    Minus = \mn.Pair (Add (First m) (Second n)) (Add (Second m) (First n))
+    Mult = \mn.{
+      a = First m
+      b = Second m
+      c = First n
+      d = Second n
+    } Pair (Add (Mul a c) (Mul b d)) (Add (Mul a d) (Mul b c))
+    Divide = \xy.{
+      D = \mn.{
+        d = FromNat (Div (Abs m) (Abs n))
+        e = Eqv (Pos m) (Pos n)
+      } If e d (Negate d)
+    } D (Normalize x) (Normalize y)
+
+    open Primitive.Int
   }
   open List {
     Left {
@@ -139,10 +172,6 @@ Pre {
   Decimal {
     open Primitive.Decimal
   }
-  Eq {
-    Nat = \mn.And (Zero (Sub m n)) (Zero (Sub n m))
-    List = \lr.And (Nat (Length l) (Length r)) (Zip Nat l r)
-  }
   open IO {
     open Primitive.IO
   }
@@ -158,15 +187,15 @@ Verify {
   7 = Succ 6
   Fact = Fix (\fn.If (Zero n) (Succ 0) (Mul n (f (Pred n))))
 
-  N0 = Eq.Nat 3 (Add 2 1)
-  N1 = Eq.Nat 6 (Mul (Sub 3 1) (Mod 7 4))
-  N2 = Eq.Nat 6 (Fact (Succ (Succ (Succ 0))))
-  N3 = Eq.Nat 7 (Add (Mul (Div 7 3) 3) (Mod 7 3))
-  N4 = Eq.Nat 6 ([ 1 , 2 , 3 ] AsFold Add False)
+  N0 = Eq 3 (Add 2 1)
+  N1 = Eq 6 (Mul (Sub 3 1) (Mod 7 4))
+  N2 = Eq 6 (Fact (Succ (Succ (Succ 0))))
+  N3 = Eq 7 (Add (Mul (Div 7 3) 3) (Mod 7 3))
+  N4 = Eq 6 ([ 1 , 2 , 3 ] AsFold Add False)
   N = [ N0 , N1 , N2 , N3 , N4 ] AsFold And True
 
   open Binary
-  B0 = Eq.Nat (Mul 3 3) (Nat ([ I , O , O , I ] AsFold App B))
+  B0 = Eq (Mul 3 3) (Nat ([ I , O , O , I ] AsFold App B))
   B = [ B0 ] AsFold And True
 
   Verified = [ N , B ] AsFold And True
