@@ -72,16 +72,28 @@ Pre {
     open Primitive.Nat
   }
   open List {
-    Cons = Pair
-    Nil = False
-    Head = First
-    Tail = Second
-    Null = \l.l (\xye.False) True
-    Fold = Fix (\hfel.If (Null l) e (f (Head l) (h f e (Tail l))))
+    Left {
+      Cons = \xsfe.f x (s f e)
+      Snoc = \xsfe.s f (f x e)
+      Nil = False
+      Head = \s.s (\xy.x) False
+      Tail = \scn.s (\htg.g h (t c)) (\t.n) (\ht.t)
+      Null = \l.l (\xy.False) True
+      Fold = \fes.s f e
+    }
+    Right {
+      Cons = Pair
+      Nil = False
+      Head = First
+      Tail = Second
+      Null = \l.l (\xye.False) True
+      Fold = Fix (\hfel.If (Null l) e (f (Head l) (h f e (Tail l))))
+    }
+    open Left
+
     Unfold = Fix (\ufe.{
       d = f e
     } Cons (First d) (u f (Second d)))
-
     Append = Fix (\pab.If (Null a) b (Cons (Head a) (p (Tail a) b)))
     Index = \nl.Head (Iterate n Tail l)
     Map = Fix (\mfl.If (Null l) Nil (Cons (f (Head l)) (m f (Tail l))))
@@ -92,26 +104,16 @@ Pre {
       t = z f (Tail a) (Tail b)
     } Cons h t))
 
-    Left {
-      Cons = \xsfe.f x (s f e)
-      Snoc = \xsfe.s f (f x e)
-      Nil = False
-      Head = \s.s (\xy.x) False
-      Tail = \scn.s (\htg.g h (t c)) (\t.n) (\ht.t)
-      Null = \l.l (\xy.False) True
-      Fold = \fes.s f e
-    }
-
     [ = \ec.c (Left.Cons e Left.Nil)
     , = \lec.c (Left.Snoc e l)
     ] = \lc.c l
-    AsList = \l.l Pair Nil
+    AsList = \l.l Cons Nil
     AsFold = \l.l
   }
   Binary {
-    B = False
-    I = \pq.q True p
-    O = \pq.q False p
+    B = Nil
+    I = \p.Cons True p
+    O = \p.Cons False p
     End = Null
     Digit = Length
     Bit {
@@ -120,6 +122,8 @@ Pre {
       Not = \b.Map Not b
       Xor = Zip Xor
     }
+    Cat = \xy.Add (Mul (Succ (Succ 0)) y) (x (Succ 0) 0)
+    Nat = Fold Cat 0
   }
   Integer {
     open Primitive.Integer
@@ -155,6 +159,10 @@ Verify {
   N4 = Eq.Nat 6 ([ 1 , 2 , 3 ] AsFold Add False)
   N = [ N0 , N1 , N2 , N3 , N4 ] AsFold And True
 
-  Verified = [ N ] AsFold And True
+  open Binary
+  B0 = Eq.Nat (Mul 3 3) (Nat ([ I , O , O , I ] AsFold App B))
+  B = [ B0 ] AsFold And True
+
+  Verified = [ N , B ] AsFold And True
 }
 Verify.Verified

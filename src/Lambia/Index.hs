@@ -8,7 +8,7 @@ import Control.Monad.Trans.Except
 import Control.Monad
 import Control.Applicative hiding (empty)
 import Data.Char
-import Data.ByteString.Char8 hiding (append,empty,reverse,foldr,last,elemIndex,head)
+import Data.ByteString.Char8 hiding (append,empty,reverse,foldr,last,elemIndex,head,length)
 import qualified Data.ByteString.Char8 as B
 import Data.List (elemIndex)
 import Data.Map.Strict hiding (split)
@@ -130,7 +130,9 @@ ixDecl (Open u) = do
       g' <- merge [] e g
       let
         (l'',g'') = case v of
-          Just v' -> (append n v' l', append n v' g')
+          Just v' 
+            | length us > 1 -> (append n v' l', append n v' g')
+            | otherwise -> (l',g')
           Nothing -> (l',g')
       put $ Status g'' l''
     Nothing -> if head us == "Primitive"
