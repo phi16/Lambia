@@ -81,7 +81,7 @@ merge [] (Save l) (Save r) = do
     right (Right x) = Just x
     u' = mapMaybe right u
   case j u of
-    Just e  -> throwE $ B.append "Duplicate variable : " $ B.intercalate ", " $ e []
+    Just e  -> return $ Save u' -- throwE $ B.append "Duplicate variable : " $ B.intercalate ", " $ e []
     Nothing -> return $ Save u'
 merge (x:xs) l (Save r) = Save <$> case lookup x r of
   Just (e,v) -> do
