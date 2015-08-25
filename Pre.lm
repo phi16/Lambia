@@ -69,6 +69,11 @@ Pre {
       u = Sub x y
     } If (Zero u) x (m u y)) (Succ p) q)
 
+    Le = \mn.Zero (Sub m n)
+    Lt = \mn.Zero (Sub (Succ m) n)
+    Ge = \mn.Zero (Sub n m)
+    Gt = \mn.Zero (Sub (Succ n) m)
+
     open Primitive.Nat
   }
   open List {
@@ -136,6 +141,7 @@ Pre {
   }
   Eq {
     Nat = \mn.And (Zero (Sub m n)) (Zero (Sub n m))
+    List = \lr.And (Nat (Length l) (Length r)) (Zip Nat l r)
   }
   open IO {
     open Primitive.IO
