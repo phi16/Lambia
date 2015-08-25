@@ -1,167 +1,167 @@
 Pre {
   open Func {
-    Id = \x.x
-    Const = \xy.x
-    Compose = \fgx.f (g x)
-    Fix = \f.(\x.f (x x)) (\x.f (x x))
-    Flip = \fxy.f y x
-    App = \fx.f x
-    Give = \xf.f x
+    Id = \x.x : a -> a
+    Const = \xy.x : a -> b -> a
+    Compose = \fgx.f (g x) : (b -> c) -> (a -> b) -> a -> c
+    Fix = \f.(\x.f (x x)) (\x.f (x x)) : (a -> a) -> a
+    Flip = \fxy.f y x : (a -> b -> c) -> b -> a -> c
+    App = \fx.f x : (a -> b) -> a -> b
+    Give = \xf.f x : a -> (a -> b) -> b
   }
   Combinator {
-    I = \x.x
-    K = \xy.x
-    S = \xyz.x z (y z)
-    B = \xyz.x (y z)
-    C = \xyz.x z y
-    W = \xy.x y y
-    X = \x.x S K
-    Y = \f.(\x.f (x x)) (\x.f (x x))
+    I = \x.x : a -> a
+    K = \xy.x : a -> b -> a
+    S = \xyz.x z (y z) : (a -> b -> c) -> (a -> b) -> a -> c
+    B = \xyz.x (y z) : (b -> c) -> (a -> b) -> a -> c
+    C = \xyz.x z y : (a -> b -> c) -> b -> a -> c
+    W = \xy.x y y : (a -> a -> b) -> a -> b
+    X = \x.x S K : (((a -> b -> c) -> (a -> b) -> a -> c) -> (d -> e -> d) -> f) -> f
+    Y = \f.(\x.f (x x)) (\x.f (x x)) : (a -> a) -> a
   }
   open Bool {
-    True = \xy.x
-    False = \xy.y
-    And = \pq.p q False
-    Or = \pq.p True q
-    Not = \pxy.p y x
-    Xor = \pq.p (Not q) q
-    Eqv = \pq.p q (Not q)
-    If = \pte.p t e
+    True = \xy.x : Bool
+    False = \xy.y : Bool
+    And = \pq.p q False : Bool -> Bool -> Bool
+    Or = \pq.p True q : Bool -> Bool -> Bool
+    Not = \pxy.p y x : Bool -> Bool
+    Xor = \pq.p (Not q) q : Bool -> Bool -> Bool
+    Eqv = \pq.p q (Not q) : Bool -> Bool -> Bool
+    If = \pte.p t e : Bool -> a -> a -> a
   }
   open Pair {
-    Pair = \xyp.p x y
-    First = \p.p True
-    Second = \p.p False
+    Pair = \xyp.p x y : a -> b -> Pair a b
+    First = \p.p True : Pair a b -> a
+    Second = \p.p False : Pair a b -> b
 
-    Swap = \px.p (Not x)
-    Curry = \fxy.f (Pair x y)
-    Uncurry = \fp.f (First p) (Second p)
+    Swap = \px.p (Not x) : Pair a b -> Pair b a
+    Curry = \fxy.f (Pair x y) : (Pair a b -> c) -> a -> b -> c
+    Uncurry = \fp.f (First p) (Second p) : (a -> b -> c) -> Pair a b -> c
   }
   open Either {
-    Left = \xfg.f x
-    Right = \xfg.g x
-    Either = \fgp.p f g
+    Left = \xfg.f x : a -> Either a b
+    Right = \xfg.g x : b -> Either a b
+    Either = \fgp.p f g : (a -> c) -> (b -> c) -> Either a b -> c
 
-    Which = \p.p (\x.False) (\x.True)
+    Which = \p.p (\x.False) (\x.True) : Either a b -> Bool
   }
   open Maybe {
-    Nothing = \ef.e
-    Just = \xef.f x
-    Maybe = \efp.p e f
+    Nothing = \ef.e : Maybe a
+    Just = \xef.f x : a -> Maybe a
+    Maybe = \efp.p e f : b -> (a -> b) -> Maybe a -> b
 
-    Exist = \p.p False (\x.True)
+    Exist = \p.p False (\x.True) : Maybe a -> Bool
   }
   open Nat {
-    0 = False
-    Succ = \nxy.x (n x y) 
-    Iterate = \nfx.n f x
+    0 = \xy.y : Nat
+    Succ = \nxy.x (n x y) : Nat -> Nat 
+    Iterate = \nfx.n f x : Nat -> (a -> a) -> a -> a
 
-    Add = \mnxy.n x (m x y)
-    Mul = \mnx.n (m x)
-    Pow = \mn.n m
-    Zero = \n.n (\x.False) True
+    Add = \mnxy.n x (m x y) : Nat -> Nat -> Nat
+    Mul = \mnx.n (m x) : Nat -> Nat -> Nat
+    Pow = \mn.n m : Nat -> Nat -> Nat
+    Zero = \n.n (\x.False) True : Nat -> Bool
 
-    Pred = \nfx.n (\gh.h (g f)) (\u.x) (\u.u)
-    Sub = \mn.n Pred m
+    Pred = \nfx.n (\gh.h (g f)) (\u.x) (\u.u) : Nat -> Nat
+    Sub = \mn.n Pred m : Nat -> Nat -> Nat
     Div = \pq.Fix (\dxy.{
       u = Sub x y
-    } If (Zero u) 0 (Succ (d u y))) (Succ p) q
+    } If (Zero u) 0 (Succ (d u y))) (Succ p) q : Nat -> Nat -> Nat
     Mod = \pq.Pred (Fix (\mxy.{
       u = Sub x y
-    } If (Zero u) x (m u y)) (Succ p) q)
+    } If (Zero u) x (m u y)) (Succ p) q) : Nat -> Nat -> Nat
 
-    Le = \mn.Zero (Sub m n)
-    Lt = \mn.Zero (Sub (Succ m) n)
-    Ge = \mn.Zero (Sub n m)
-    Gt = \mn.Zero (Sub (Succ n) m)
-    Eq = \mn.And (Le m n) (Ge m n)
+    Le = \mn.Zero (Sub m n) : Nat -> Nat -> Bool
+    Lt = \mn.Zero (Sub (Succ m) n) : Nat -> Nat -> Bool
+    Ge = \mn.Zero (Sub n m) : Nat -> Nat -> Bool
+    Gt = \mn.Zero (Sub (Succ n) m) : Nat -> Nat -> Bool
+    Eq = \mn.And (Le m n) (Ge m n) : Nat -> Nat -> Bool
 
     open Primitive.Nat
   }
   Int {
-    FromNat = \n.Pair n 0
-    O = FromNat 0
+    FromNat = \n.Pair n 0 : Nat -> Int
+    O = FromNat 0 : Int
     Normalize = \n.{
       f = First n
       s = Second n
-    } If (Ge f s) (Pair (Sub f s) 0) (Pair 0 (Sub s f))
-    ToNat = \n.First (Normalize n)
-    Abs = \n.Uncurry Add (Normalize n)
-    Pos = \n.Gt (First n) (Second n)
-    Neg = \n.Lt (First n) (Second n)
-    Z = \n.Eq (First n) (Second n)
-    Negate = Swap
+    } If (Ge f s) (Pair (Sub f s) 0) (Pair 0 (Sub s f)) : Int -> Int
+    ToNat = \n.First (Normalize n) : Int -> Nat
+    Abs = \n.Uncurry Add (Normalize n) : Int -> Nat
+    Pos = \n.Gt (First n) (Second n) : Int -> Bool
+    Neg = \n.Lt (First n) (Second n) : Int -> Bool
+    Z = \n.Eq (First n) (Second n) : Int -> Bool
+    Negate = Swap : Int -> Int
 
-    Plus = \mn.Pair (Add (First m) (First n)) (Add (Second m) (Second n))
-    Minus = \mn.Pair (Add (First m) (Second n)) (Add (Second m) (First n))
+    Plus = \mn.Pair (Add (First m) (First n)) (Add (Second m) (Second n)) : Int -> Int -> Int
+    Minus = \mn.Pair (Add (First m) (Second n)) (Add (Second m) (First n)) : Int -> Int -> Int
     Mult = \mn.{
       a = First m
       b = Second m
       c = First n
       d = Second n
-    } Pair (Add (Mul a c) (Mul b d)) (Add (Mul a d) (Mul b c))
+    } Pair (Add (Mul a c) (Mul b d)) (Add (Mul a d) (Mul b c)) : Int -> Int -> Int
     Divide = \xy.{
       D = \mn.{
         d = FromNat (Div (Abs m) (Abs n))
         e = Eqv (Pos m) (Pos n)
       } If e d (Negate d)
-    } D (Normalize x) (Normalize y)
+    } D (Normalize x) (Normalize y) : Int -> Int -> Int
 
     open Primitive.Int
   }
   open List {
     Left {
-      Cons = \xsfe.f x (s f e)
-      Snoc = \xsfe.s f (f x e)
-      Nil = False
-      Head = \s.s (\xy.x) False
-      Tail = \scn.s (\htg.g h (t c)) (\t.n) (\ht.t)
-      Null = \l.l (\xy.False) True
-      Fold = \fes.s f e
+      Cons = \xsfe.f x (s f e) : a -> List a -> List a
+      Snoc = \xsfe.s f (f x e) : a -> List a -> List a
+      Nil = False : List a
+      Head = \s.s (\xy.x) False : List a -> a
+      Tail = \scn.s (\htg.g h (t c)) (\t.n) (\ht.t) : List a -> List a
+      Null = \l.l (\xy.False) True : List a -> Bool
+      Fold = \fes.s f e : (a -> b -> a) -> b -> List a -> b
     }
     Right {
-      Cons = Pair
-      Nil = False
-      Head = First
-      Tail = Second
-      Null = \l.l (\xye.False) True
-      Fold = Fix (\hfel.If (Null l) e (f (Head l) (h f e (Tail l))))
+      Cons = Pair : a -> List a -> List a
+      Nil = False : List a
+      Head = First : List a -> a
+      Tail = Second : List a -> List a
+      Null = \l.l (\xye.False) True : List a -> Bool
+      Fold = Fix (\hfel.If (Null l) e (f (Head l) (h f e (Tail l)))) : (a -> b -> a) -> b -> List a -> b
     }
     open Left
 
     Unfold = Fix (\ufe.{
       d = f e
-    } Cons (First d) (u f (Second d)))
-    Append = Fix (\pab.If (Null a) b (Cons (Head a) (p (Tail a) b)))
-    Index = \nl.Head (Iterate n Tail l)
-    Map = Fix (\mfl.If (Null l) Nil (Cons (f (Head l)) (m f (Tail l))))
-    Nats = Fix (\n.Cons 0 (Map Succ n))
-    Length = Fix (\fl.If (Null l) 0 (Succ (f (Tail l))))
+    } Cons (First d) (u f (Second d))) : (a -> Pair b a) -> a -> List b
+    Append = Fix (\pab.If (Null a) b (Cons (Head a) (p (Tail a) b))) : List a -> List a -> List a
+    Index = \nl.Head (Iterate n Tail l) : Int -> List a -> a
+    Map = Fix (\mfl.If (Null l) Nil (Cons (f (Head l)) (m f (Tail l)))) : (a -> b) -> List a -> List b
+    Nats = Fix (\n.Cons 0 (Map Succ n)) : List Nat
+    Length = Fix (\fl.If (Null l) 0 (Succ (f (Tail l)))) : List a -> Nat
     Zip = Fix (\zfab.If (Or (Null a) (Null b)) Nil ({
       h = f (Head a) (Head b)
       t = z f (Tail a) (Tail b)
-    } Cons h t))
+    } Cons h t)) : (a -> b -> c) -> List a -> List b -> List c
 
-    [ = \ec.c (Left.Cons e Left.Nil)
-    , = \lec.c (Left.Snoc e l)
-    ] = \lc.c l
-    AsList = \l.l Cons Nil
-    AsFold = \l.l
+    [ = \ec.c (Left.Cons e Left.Nil) : a -> (Left.List a -> b) -> b
+    , = \lec.c (Left.Snoc e l) : Left.List a -> a -> (Left.List a -> b) -> b
+    ] = \lc.c l : List a -> (Left.List a -> b) -> b
+    AsList = \l.l Cons Nil : Left.List a -> List a
+    AsFold = \l.l : Left.List a -> (a -> b -> a) -> b -> b
   }
   Binary {
-    B = Nil
-    I = \p.Cons True p
-    O = \p.Cons False p
-    End = Null
-    Digit = Length
+    B = Nil : Binary
+    I = \p.Cons True p : Binary -> Binary
+    O = \p.Cons False p : Binary -> Binary
+    End = Null : Binary -> Bool
+    Digit = Length : Binary -> Nat
     Bit {
-      And = Zip And
-      Or = Zip Or
-      Not = \b.Map Not b
-      Xor = Zip Xor
+      And = Zip And : Binary -> Binary -> Binary
+      Or = Zip Or : Binary -> Binary -> Binary
+      Not = \b.Map Not b : Binary -> Binary
+      Xor = Zip Xor : Binary -> Binary -> Binary
     }
-    Cat = \xy.Add (Mul (Succ (Succ 0)) y) (x (Succ 0) 0)
-    Nat = Fold Cat 0
+    Cat = \xy.Add (Mul (Succ (Succ 0)) y) (If x (Succ 0) 0) : (Bool -> Nat -> Nat)
+    Nat = Fold Cat 0 : Binary -> Nat
   }
   Integer {
     open Primitive.Integer

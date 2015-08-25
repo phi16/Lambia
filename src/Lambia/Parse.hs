@@ -61,7 +61,7 @@ lf = eof <|> do
     l = let
         a = try $ do
           none
-          string "//"
+          string "//" <|> string ":"
           manyTill anyChar $ try $ void endOfLine <|> eof
           return ()
         b = try $ do
