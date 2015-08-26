@@ -150,6 +150,22 @@ Pre {
       h = f (Head a) (Head b)
       t = z f (Tail a) (Tail b)
     } Cons h t)) : (a -> b -> c) -> List a -> List b -> List c
+    Take = Fix (\tnl.If (Or (Zero n) (Null l)) Nil (Cons (Head l) (t (Pred n) (Tail l)))) : Int -> List a -> List a
+    Drop = Fix (\tnl.If (Or (Zero n) (Null l)) l (t (Pred n) (Tail l))) : Int -> List a -> List a
+    Split = Fix (\snl.If (Or (Zero n) (Null l)) (Pair Nil l) ({
+      r = s (Pred n) (Tail l)
+    } Pair (Cons (Head l) (Fst r)) (Snd r))) : Int -> List a -> Pair (List a) (List a)
+    Filter = \f.Fold (\pq.(If (f p) (Cons p) Id) q) Nil : (a -> Bool) -> List a -> List a
+    Partition = \f.{
+      pred = \pq.(If (f p) First Second) (Cons p) q
+    } Fold pred (Pair Nil Nil) : (a -> Bool) -> List a -> Pair (List a) (List a)
+    Sort = Fix (\sl.If (Null l) Nil ({
+      h = Head l
+      t = Tail l
+      u = Partition (Ge h) t
+      la = s (Fst u)
+      ra = Cons h (s (Snd u))
+    } If (Null t) (Cons h Nil) (Append la ra))) : List Nat -> List Nat
 
     [ = \ec.c (Left.Cons e Left.Nil) : a -> (Left.List a -> b) -> b
     , = \lec.c (Left.Snoc e l) : Left.List a -> a -> (Left.List a -> b) -> b
@@ -200,7 +216,8 @@ Verify {
   l = [ 3 , 2 , 5 , 1 , 4 ] AsList
   L0 = Eq 5 (Length l)
   L1 = Eq (Mul 3 5) (Fold Add 0 l)
-  L = [ L0 , L1 ] AsFold And True
+  L2 = Fold And True (Zip Eq (Take 5 (Tail Nats)) (Sort l))
+  L = [ L0 , L1 , L2 ] AsFold And True
 
   open Binary
   B0 = Eq (Mul 3 3) (Nat ([ I , O , O , I ] AsFold App B))
