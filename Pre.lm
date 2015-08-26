@@ -160,8 +160,9 @@ Pre {
       Not = \b.Map Not b : Binary -> Binary
       Xor = Zip Xor : Binary -> Binary -> Binary
     }
-    Cat = \xy.Add (Mul (Succ (Succ 0)) y) (If x (Succ 0) 0) : Nat -> Bool -> Nat
-    Nat = Fold Cat 0 : Binary -> Nat
+    Nat = {
+      c = \xy.Add (Mul (Succ (Succ 0)) y) (If x (Succ 0) 0) : Nat -> Bool -> Nat
+    } Fold c 0 : Binary -> Nat
   }
   Integer {
     open Primitive.Integer
