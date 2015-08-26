@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main where
 
 import Prelude hiding (getContents, readFile)
@@ -31,6 +33,8 @@ main = do
           (Just l,v) -> do
             let b = "-i"`elem`opt
             when b $ putStrLn "> [Source]"
-            print $ fst $ apply l
-            when b $ interactive v
+            let l' = fst $ apply l
+            print l'
+            let v' = (fst v, append "it" l' $ snd v)
+            when b $ interactive v'
           (Nothing,v) -> interactive v
