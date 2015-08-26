@@ -45,9 +45,9 @@ Pre {
     Which = \p.p (\x.False) (\x.True) : Either a b -> Bool
   }
   open Maybe {
-    Nothing = \ef.e : Maybe a
-    Just = \xef.f x : a -> Maybe a
-    Maybe = \efp.p e f : b -> (a -> b) -> Maybe a -> b
+    Nothing = \fe.e : Maybe a
+    Just = \xfe.f x : a -> Maybe a
+    Maybe = \fep.p f e : (a -> b) -> b ->  Maybe a -> b
 
     Exist = \p.p False (\x.True) : Maybe a -> Bool
   }
@@ -113,7 +113,7 @@ Pre {
     Left {
       Cons = \xsfe.f x (s f e) : a -> List a -> List a
       Snoc = \xsfe.s f (f x e) : a -> List a -> List a
-      Nil = False : List a
+      Nil = \fe.e : List a
       Head = \s.s (\xy.x) False : List a -> a
       Tail = \scn.s (\htg.g h (t c)) (\t.n) (\ht.t) : List a -> List a
       Null = \l.l (\xy.False) True : List a -> Bool
@@ -121,7 +121,7 @@ Pre {
     }
     Right {
       Cons = Pair : a -> List a -> List a
-      Nil = False : List a
+      Nil = \xy.y : List a
       Head = First : List a -> a
       Tail = Second : List a -> List a
       Null = \l.l (\xye.False) True : List a -> Bool
