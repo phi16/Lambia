@@ -38,7 +38,7 @@ parseLines :: ByteString -> Either ByteString (Either Declare Expr)
 parseLines s = let
     pls :: Parser (Either Declare Expr)
     pls = try (Left <$> decl) <|> (Right <$> (expr <* lf))
-  in case parse (pls <* eof) "<interactive>" $ s`snoc`'\n' of
+  in case parse (pls <* char '\0') "<interactive>" $ s`snoc`'\0' of
     Left err -> Left $ pack $ show err
     Right e -> Right e
 

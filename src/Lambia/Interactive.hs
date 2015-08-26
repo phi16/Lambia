@@ -2,7 +2,7 @@
 
 module Lambia.Interactive (interactive) where
 
-import Prelude hiding (getLine, putStr, putStrLn)
+import Prelude hiding (getLine, putStr, putStrLn, null)
 import Data.ByteString.Char8 hiding (append)
 import qualified Data.ByteString.Char8 as B
 import Control.Applicative hiding (empty)
@@ -23,12 +23,16 @@ interactive (s1,s2) = void $ runStateT (ev empty) $ Status s1 s2
 
 ev :: ByteString -> Act ()
 ev str = do
-  lift $ putStr "> "
+  lift $ putStr $ if null str then "> " else "| "
   x <- flip snoc '\n' <$> lift getLine
-  case parseLines (str`B.append`x) of
-    Left err -> do
-      lift $ putStrLn err
-      ev ""
+  let ss = str`B.append`x
+  case parseLines ss of
+    Left err -> case "unexpected \'\\NUL\'"`isInfixOf`err of
+      True -> do
+        ev ss
+      False -> do
+        lift $ putStrLn err
+        ev ""
     Right e -> do
       s <- get
       let
