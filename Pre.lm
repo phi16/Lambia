@@ -160,7 +160,7 @@ Pre {
       Not = \b.Map Not b : Binary -> Binary
       Xor = Zip Xor : Binary -> Binary -> Binary
     }
-    Cat = \xy.Add (Mul (Succ (Succ 0)) y) (If x (Succ 0) 0) : (Bool -> Nat -> Nat)
+    Cat = \xy.Add (Mul (Succ (Succ 0)) y) (If x (Succ 0) 0) : Nat -> Bool -> Nat
     Nat = Fold Cat 0 : Binary -> Nat
   }
   Integer {
