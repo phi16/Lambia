@@ -40,14 +40,11 @@ ev str = do
           lift $ putStrLn f
           return s'
         Right (Left d') -> return s'
-        Right (Right e') -> case simple 10000 e' of
-          (False,v) -> do
-            lift $ putStrLn "{Loop}"
-            return s'
-          (True,v) -> do
-            lift $ putStrLn $ pack $ show $ v
-            return $ case s' of
-              Status a u -> Status a $ append "it" v u
+        Right (Right e') -> do
+          let v = fst $ apply e'
+          lift $ putStrLn $ pack $ show v
+          return $ case s' of
+            Status a u -> Status a $ append "it" v u
       put s''
       ev ""
 
