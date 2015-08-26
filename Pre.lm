@@ -30,12 +30,14 @@ Pre {
   }
   open Pair {
     Pair = \xyp.p x y : a -> b -> Pair a b
-    First = \p.p True : Pair a b -> a
-    Second = \p.p False : Pair a b -> b
+    Fst = \p.p True : Pair a b -> a
+    Snd = \p.p False : Pair a b -> b
 
     Swap = \px.p (Not x) : Pair a b -> Pair b a
     Curry = \fxy.f (Pair x y) : (Pair a b -> c) -> a -> b -> c
-    Uncurry = \fp.f (First p) (Second p) : (a -> b -> c) -> Pair a b -> c
+    Uncurry = \fp.f (Fst p) (Snd p) : (a -> b -> c) -> Pair a b -> c
+    First = \fpd.d (f (Fst p)) (Snd p)
+    Second = \fpd.d (Fst p) (f (Snd p))
   }
   open Either {
     Left = \xfg.f x : a -> Either a b
@@ -89,23 +91,23 @@ Pre {
     FromNat = \n.Pair n 0 : Nat -> Int
     O = FromNat 0 : Int
     Normalize = \n.{
-      f = First n
-      s = Second n
+      f = Fst n
+      s = Snd n
     } If (Ge f s) (Pair (Sub f s) 0) (Pair 0 (Sub s f)) : Int -> Int
-    ToNat = \n.First (Normalize n) : Int -> Nat
+    ToNat = \n.Fst (Normalize n) : Int -> Nat
     Abs = \n.Uncurry Add (Normalize n) : Int -> Nat
-    Pos = \n.Gt (First n) (Second n) : Int -> Bool
-    Neg = \n.Lt (First n) (Second n) : Int -> Bool
-    Z = \n.Eq (First n) (Second n) : Int -> Bool
+    Pos = \n.Gt (Fst n) (Snd n) : Int -> Bool
+    Neg = \n.Lt (Fst n) (Snd n) : Int -> Bool
+    Z = \n.Eq (Fst n) (Snd n) : Int -> Bool
     Negate = Swap : Int -> Int
 
-    Plus = \mn.Pair (Add (First m) (First n)) (Add (Second m) (Second n)) : Int -> Int -> Int
-    Minus = \mn.Pair (Add (First m) (Second n)) (Add (Second m) (First n)) : Int -> Int -> Int
+    Plus = \mn.Pair (Add (Fst m) (Fst n)) (Add (Snd m) (Snd n)) : Int -> Int -> Int
+    Minus = \mn.Pair (Add (Fst m) (Snd n)) (Add (Snd m) (Fst n)) : Int -> Int -> Int
     Mult = \mn.{
-      a = First m
-      b = Second m
-      c = First n
-      d = Second n
+      a = Fst m
+      b = Snd m
+      c = Fst n
+      d = Snd n
     } Pair (Add (Mul a c) (Mul b d)) (Add (Mul a d) (Mul b c)) : Int -> Int -> Int
     Divide = \xy.{
       D = \mn.{
@@ -129,8 +131,8 @@ Pre {
     Right {
       Cons = Pair : a -> List a -> List a
       Nil = \xy.y : List a
-      Head = First : List a -> a
-      Tail = Second : List a -> List a
+      Head = Fst : List a -> a
+      Tail = Snd : List a -> List a
       Null = \l.l (\xye.False) True : List a -> Bool
       Fold = Fix (\hfel.If (Null l) e (f (Head l) (h f e (Tail l)))) : (a -> b -> a) -> b -> List a -> b
     }
@@ -138,12 +140,12 @@ Pre {
 
     Unfold = Fix (\ufe.{
       d = f e
-    } Cons (First d) (u f (Second d))) : (a -> Pair b a) -> a -> List b
-    Append = Fix (\pab.If (Null a) b (Cons (Head a) (p (Tail a) b))) : List a -> List a -> List a
+    } Second (u f) d) : (a -> Pair b a) -> a -> List b
+    Append = \ab.Fold Cons b a : List a -> List a -> List a
     Index = \nl.Head (Iterate n Tail l) : Int -> List a -> a
-    Map = Fix (\mfl.If (Null l) Nil (Cons (f (Head l)) (m f (Tail l)))) : (a -> b) -> List a -> List b
+    Map = \f.Fold (\pq.Cons (f p) q) Nil : (a -> b) -> List a -> List b
     Nats = Fix (\n.Cons 0 (Map Succ n)) : List Nat
-    Length = Fix (\fl.If (Null l) 0 (Succ (f (Tail l)))) : List a -> Nat
+    Length = Fold (Const Succ) 0 : List a -> Nat
     Zip = Fix (\zfab.If (Or (Null a) (Null b)) Nil ({
       h = f (Head a) (Head b)
       t = z f (Tail a) (Tail b)
@@ -195,10 +197,15 @@ Verify {
   N4 = Eq 6 ([ 1 , 2 , 3 ] AsFold Add False)
   N = [ N0 , N1 , N2 , N3 , N4 ] AsFold And True
 
+  l = [ 3 , 2 , 5 , 1 , 4 ] AsList
+  L0 = Eq 5 (Length l)
+  L1 = Eq (Mul 3 5) (Fold Add 0 l)
+  L = [ L0 , L1 ] AsFold And True
+
   open Binary
   B0 = Eq (Mul 3 3) (Nat ([ I , O , O , I ] AsFold App B))
   B = [ B0 ] AsFold And True
 
-  Verified = [ N , B ] AsFold And True
+  Verified = [ N , L , B ] AsFold And True
 }
 Verify.Verified
