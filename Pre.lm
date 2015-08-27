@@ -20,6 +20,7 @@ Pre {
     Y = \f.(\x.f (x x)) (\x.f (x x)) : (a -> a) -> a
   }
   open Bool {
+    // Bool : a -> a -> a
     True = \xy.x : Bool
     False = \xy.y : Bool
     And = \pq.p q False : Bool -> Bool -> Bool
@@ -30,17 +31,19 @@ Pre {
     If = \pte.p t e : Bool -> a -> a -> a
   }
   open Pair {
+    // Pair : \ab.(a -> b -> c) -> c
     Pair = \xyp.p x y : a -> b -> Pair a b
-    Fst = \p.p True : Pair a b -> a
-    Snd = \p.p False : Pair a b -> b
+    Fst = \p.p (\xy.x) : Pair a b -> a
+    Snd = \p.p (\xy.y) : Pair a b -> b
 
-    Swap = \px.p (Not x) : Pair a b -> Pair b a
+    Swap = \px.p (\ab.x b a) : Pair a b -> Pair b a
     Curry = \fxy.f (Pair x y) : (Pair a b -> c) -> a -> b -> c
     Uncurry = \fp.f (Fst p) (Snd p) : (a -> b -> c) -> Pair a b -> c
     First = \fpd.d (f (Fst p)) (Snd p)
     Second = \fpd.d (Fst p) (f (Snd p))
   }
   open Either {
+    // Either : \ab.(a -> c) -> (b -> c) -> c
     Left = \xfg.f x : a -> Either a b
     Right = \xfg.g x : b -> Either a b
     Either = \fgp.p f g : (a -> c) -> (b -> c) -> Either a b -> c
@@ -48,13 +51,15 @@ Pre {
     Which = \p.p (\x.False) (\x.True) : Either a b -> Bool
   }
   open Maybe {
+    // Maybe : \a.(a -> b) -> b -> b
     Nothing = \fe.e : Maybe a
     Just = \xfe.f x : a -> Maybe a
-    Maybe = \fep.p f e : (a -> b) -> b ->  Maybe a -> b
+    Maybe = \fep.p f e : (a -> b) -> b -> Maybe a -> b
 
     Exist = \p.p False (\x.True) : Maybe a -> Bool
   }
   open Nat {
+    // Nat : (a -> a) -> a -> a
     0 = \xy.y : Nat
     Succ = \nxy.x (n x y) : Nat -> Nat 
     Iterate = \nfx.n f x : Nat -> (a -> a) -> a -> a
@@ -89,6 +94,7 @@ Pre {
     7 = Succ 6
   }
   Int {
+    // Int : Pair Nat Nat
     FromNat = \n.Pair n 0 : Nat -> Int
     O = FromNat 0 : Int
     Normalize = \n.{
@@ -121,6 +127,7 @@ Pre {
   }
   open List {
     Left {
+      // List : (a -> b -> b) -> b -> b
       Cons = \xsfe.f x (s f e) : a -> List a -> List a
       Snoc = \xsfe.s f (f x e) : a -> List a -> List a
       Nil = \fe.e : List a
@@ -130,6 +137,7 @@ Pre {
       Fold = \fes.s f e : (a -> b -> b) -> b -> List a -> b
     }
     Right {
+      // List : \a.Rec (\l.Pair a l)
       Cons = Pair : a -> List a -> List a
       Nil = \xy.y : List a
       Head = Fst : List a -> a
@@ -175,6 +183,7 @@ Pre {
     AsFold = \l.l : Left.List a -> (a -> b -> b) -> b -> b
   }
   Binary {
+    // Binary : List Bool
     B = Nil : Binary
     I = \p.Cons True p : Binary -> Binary
     O = \p.Cons False p : Binary -> Binary
