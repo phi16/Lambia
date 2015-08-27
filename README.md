@@ -8,6 +8,6 @@ $ Lambia Pre.lm -i
 (\ab.a)
 > open Pre
 > Fact = Fix (\fn.If (Zero n) (Succ 0) (Mul n (f (Pred n))))
-> Fact (Succ (Succ (Succ 0)))
+> Fact 3
 (\ab.a (a (a (a (a (a b))))))
 >
