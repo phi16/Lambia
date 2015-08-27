@@ -126,7 +126,7 @@ Pre {
       Head = \s.s (\xy.x) False : List a -> a
       Tail = \scn.s (\htg.g h (t c)) (\t.n) (\ht.t) : List a -> List a
       Null = \l.l (\xy.False) True : List a -> Bool
-      Fold = \fes.s f e : (a -> b -> a) -> b -> List a -> b
+      Fold = \fes.s f e : (a -> b -> b) -> b -> List a -> b
     }
     Right {
       Cons = Pair : a -> List a -> List a
@@ -134,7 +134,7 @@ Pre {
       Head = Fst : List a -> a
       Tail = Snd : List a -> List a
       Null = \l.l (\xye.False) True : List a -> Bool
-      Fold = Fix (\hfel.If (Null l) e (f (Head l) (h f e (Tail l)))) : (a -> b -> a) -> b -> List a -> b
+      Fold = Fix (\hfel.If (Null l) e (f (Head l) (h f e (Tail l)))) : (a -> b -> b) -> b -> List a -> b
     }
     open Left
 
@@ -169,9 +169,9 @@ Pre {
 
     [ = \ec.c (Left.Cons e Left.Nil) : a -> (Left.List a -> b) -> b
     , = \lec.c (Left.Snoc e l) : Left.List a -> a -> (Left.List a -> b) -> b
-    ] = \lc.c l : List a -> (Left.List a -> b) -> b
+    ] = \lc.c l : Left.List a -> (Left.List a -> b) -> b
     AsList = \l.l Cons Nil : Left.List a -> List a
-    AsFold = \l.l : Left.List a -> (a -> b -> a) -> b -> b
+    AsFold = \l.l : Left.List a -> (a -> b -> b) -> b -> b
   }
   Binary {
     B = Nil : Binary
