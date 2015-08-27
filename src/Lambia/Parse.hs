@@ -176,10 +176,13 @@ eTerm = (do
   )
 
 signs :: Parser Char
-signs = choice $ map char "-[,]"
+signs = choice $ map char "-\'"
+
+signName :: Parser ByteString
+signName = choice $ map (fmap singleton . char) "[,]`"
 
 declName :: Parser ByteString
-declName = do
+declName = signName <|> do
   h <- alphaNum <|> signs
   hs <- many $ alphaNum <|> signs
   return $ pack $ h:hs
