@@ -48,7 +48,7 @@ ev str = do
           let v = fst $ apply e'
           lift $ putStrLn $ pack $ show v
           return $ case s' of
-            Status a u -> Status a $ append "it" v u
+            Status a u -> Status a $ append "it" Nothing v u
       put s''
       ev ""
 

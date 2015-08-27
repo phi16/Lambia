@@ -35,6 +35,6 @@ main = do
             when b $ putStrLn "> [Source]"
             let l' = fst $ apply l
             print l'
-            let v' = (fst v, append "it" l' $ snd v)
+            let v' = (fst v, append "it" Nothing l' $ snd v)
             when b $ interactive v'
           (Nothing,v) -> interactive v

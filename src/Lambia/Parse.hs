@@ -2,11 +2,11 @@
 
 module Lambia.Parse (parseSource, parseLines) where
 
-import Prelude hiding (concat)
+import Prelude hiding (concat, null)
 import Control.Monad
 import Control.Applicative hiding (many,optional,(<|>))
 import Data.Char (ord)
-import Data.ByteString.Char8 (ByteString, singleton, cons, snoc, pack, intercalate, concat)
+import Data.ByteString.Char8 (ByteString, singleton, cons, snoc, pack, intercalate, concat, null)
 import Text.Parsec
 import Text.Parsec.Char
 import Text.Parsec.ByteString
@@ -37,7 +37,7 @@ parseSource s = case parse source "<stdin>" $ s`snoc`'\n' of
 parseLines :: ByteString -> Either ByteString (Either Declare Expr)
 parseLines s = let
     pls :: Parser (Either Declare Expr)
-    pls = try (Right <$> (expr <* lf)) <|> (Left <$> decl)
+    pls = try (Right <$> (expr <* lf)) <|> (Left <$> decl (Just ""))
   in case parse (pls <* char '\0') "<interactive>" $ s`snoc`'\0' of
     Left err -> Left $ pack $ show err
     Right e -> Right e
@@ -84,14 +84,18 @@ source = do
           lf
           return (xs [],e)
         ) <|> (do
-          d <- decl
+          d <- decl $ Just ""
           du (xs . (d:), j))
     in du (id,Nothing)
   eof
   return $ Source ds e
 
-decl :: Parser Declare
-decl = (none>>) $ (do
+plus :: ByteString -> Maybe ByteString -> Maybe ByteString
+plus x Nothing = Nothing
+plus x (Just y) = Just $ if null y then x else concat [y,".",x]
+
+decl :: Maybe ByteString -> Parser Declare
+decl sc = (none>>) $ (do
     try $ string "open" >> spaces1
     n <- scopeName
     none
@@ -99,7 +103,7 @@ decl = (none>>) $ (do
       d = do
         char '{'
         lf
-        ds <- manyTill decl $ try $ none >> char '}'
+        ds <- manyTill (decl $ plus n sc) $ try $ none >> char '}'
         lf
         return $ Scope True n ds
       e = do
@@ -113,13 +117,13 @@ decl = (none>>) $ (do
       return n'
     e <- expr
     lf
-    return $ Decl n e
+    return $ Decl n sc e
   ) <|> (do
     n <- name
     none
     char '{'
     lf
-    ds <- manyTill decl $ try $ none >> char '}'
+    ds <- manyTill (decl $ plus n sc) $ try $ none >> char '}'
     lf
     return $ Scope False n ds
   )
@@ -129,7 +133,7 @@ expr = (none>>) $ (do
     char '{'
     none
     lf
-    ds <- manyTill decl $ try $ none >> char '}'
+    ds <- manyTill (decl Nothing) $ try $ none >> char '}'
     none
     e <- term
     return $ Expr ds e

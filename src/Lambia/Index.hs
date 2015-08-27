@@ -13,7 +13,7 @@ import qualified Data.ByteString.Char8 as B
 import Data.List (elemIndex)
 import Data.Map.Strict hiding (split)
 import Data.Traversable
-import Data.Maybe (isJust)
+import Data.Maybe (isJust, fromMaybe)
 import qualified Data.Sequence as S
 
 import Lambia.Types
@@ -39,12 +39,12 @@ indexing (Source decls e) = let
     Left l -> Left l
     Right d -> Right (d,pass s)
 
-append :: ByteString -> Lambda -> Save -> Save
-append v e (Save s) = Save $ let
+append :: ByteString -> Maybe ByteString -> Lambda -> Save -> Save
+append v sc e (Save s) = Save $ let
     u = lookup v s
   in case u of
-    Just w  -> insert v (fst w,Just e) s
-    Nothing -> insert v (nil,Just e) s
+    Just w  -> insert v (fst w,Just (e,sc)) s
+    Nothing -> insert v (nil,Just (e,sc)) s
 
 match :: [ByteString] -> Save -> Maybe Entity
 match [] e = Nothing
@@ -65,10 +65,15 @@ merge [] (Save l) (Save r) = do
         c' = mapMaybe right c
         x = v <|> w
       in case j c of
-        Just e -> Right (Save c',x) -- Left e
+        Just e -> Left e
         Nothing -> case isJust v && isJust w of
           False -> Right (Save c',x)
-          True  -> Right (Save c',x) -- Left (key:)
+          True  -> case (v,w) of
+            (Just (_,vs), Just (_,ws))
+              | vs == ws  -> Right (Save c',x)
+              | otherwise -> let
+                  i = fromMaybe "[Outer]"
+                in Left (B.concat ["{",i vs,"|",i ws,"}.",key]:)
     mu = mergeWithKey meld (fmap Right) (fmap Right)
     u = mu l r
     j = foldr f Nothing where
@@ -92,14 +97,14 @@ merge (x:xs) l (Save r) = Save <$> case lookup x r of
     return $ insert x (u,Nothing) r
 
 ixDecl :: Declare -> Local ()
-ixDecl (Decl str e) = do
+ixDecl (Decl str scope e) = do
   Status g l <- get
   m <- ixExpr e
   let
     g' = if isLower $ B.head str
       then g
-      else append str m g
-    l' = append str m l
+      else append str scope m g
+    l' = append str scope m l
   put $ Status g' l'
 ixDecl (Scope False str ds) = do
   Status g l <- get
@@ -130,8 +135,8 @@ ixDecl (Open u) = do
       g' <- merge [] e g
       let
         (l'',g'') = case v of
-          Just v' 
-            | length us > 1 -> (append n v' l', append n v' g')
+          Just (v',sc) 
+            | length us > 1 -> (append n sc v' l', append n sc v' g')
             | otherwise -> (l',g')
           Nothing -> (l',g')
       put $ Status g'' l''
@@ -145,12 +150,12 @@ ixExpr e = snd . simple 100 <$> iE [] e
 iE :: [ByteString] -> Expr -> Local Lambda
 iE us (Expr decls t) = do
   s <- get
-  forM_ decls $ \(Decl str e) -> do
+  forM_ decls $ \(Decl str sc e) -> do
     Status g l <- get
     m <- iE us e
     let
-      g' = append str m g
-      l' = append str m l
+      g' = append str Nothing m g
+      l' = append str Nothing m l
     put $ Status g' l'
   i <- iT us t
   put s
@@ -172,7 +177,7 @@ iT us (Var v) = case elemIndex v us of
       search :: [ByteString] -> Save -> Local Lambda
       search [] s = err
       search [x] (Save s) = case lookup x s of
-        Just (_,Just e) -> return e
+        Just (_,Just (e,_)) -> return e
         _ -> err
       search (x:xs) (Save s) = case lookup x s of
         Just (s',_) -> search xs s'
