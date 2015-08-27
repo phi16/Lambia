@@ -65,10 +65,10 @@ merge [] (Save l) (Save r) = do
         c' = mapMaybe right c
         x = v <|> w
       in case j c of
-        Just e -> Left e
+        Just e -> Right (Save c',x) -- Left e
         Nothing -> case isJust v && isJust w of
           False -> Right (Save c',x)
-          True  -> Left (key:)
+          True  -> Right (Save c',x) -- Left (key:)
     mu = mergeWithKey meld (fmap Right) (fmap Right)
     u = mu l r
     j = foldr f Nothing where
@@ -81,7 +81,7 @@ merge [] (Save l) (Save r) = do
     right (Right x) = Just x
     u' = mapMaybe right u
   case j u of
-    Just e  -> return $ Save u' -- throwE $ B.append "Duplicate variable : " $ B.intercalate ", " $ e []
+    Just e  -> throwE $ B.append "Duplicate variable : " $ B.intercalate ", " $ e []
     Nothing -> return $ Save u'
 merge (x:xs) l (Save r) = Save <$> case lookup x r of
   Just (e,v) -> do
