@@ -175,6 +175,10 @@ Pre {
       la = s (Fst u)
       ra = Cons h (s (Snd u))
     } If (Null t) (Cons h Nil) (Append la ra))) : List Nat -> List Nat
+    All = Fold And True
+    Any = Fold Or False
+    Forall = \f.Fold (\xe.And e (f x)) True
+    Exists = \f.Fold (\xe.Or e (f x)) False
 
     [ = \ec.c (Left.Cons e Left.Nil) : a -> (Left.List a -> b) -> b
     , = \lec.c (Left.Snoc e l) : Left.List a -> a -> (Left.List a -> b) -> b
@@ -221,12 +225,14 @@ Verify {
   N2 = Eq 6 (Fact 3)
   N3 = Eq 7 (Add (Mul (Div 7 3) 3) (Mod 7 3))
   N4 = Eq 6 ([1,2,3] AsFold Add False)
-  N = [ N0,N1,N2,N3,N4] AsFold And True
+  N5 = Forall (Le 0) (Take 5 Nats)
+  N6 = Eq (`2 Mul 5`) (` (`3 Mul 3`) Add 1`)
+  N = [N0,N1,N2,N3,N4,N5,N6] AsFold And True
 
   l = [3,2,5,1,4] AsList
   L0 = Eq 5 (Length l)
   L1 = Eq (Mul 3 5) (Fold Add 0 l)
-  L2 = Fold And True (Zip Eq (Take 5 (Tail Nats)) (Sort l))
+  L2 = All (Zip Eq (Take 5 (Tail Nats)) (Sort l))
   L = [L0,L1,L2] AsFold And True
 
   open Binary
