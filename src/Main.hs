@@ -3,10 +3,9 @@
 module Main where
 
 import Prelude hiding (getContents, readFile)
-import Control.Applicative
 import Control.Monad
 import Data.List (partition)
-import Data.ByteString.Char8 (pack, unpack, getContents, readFile)
+import Data.ByteString.Char8 (readFile)
 import qualified Data.ByteString.Char8 as B
 import System.Environment
 

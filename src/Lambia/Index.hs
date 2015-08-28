@@ -3,7 +3,7 @@
 module Lambia.Index (nil, indexing, append, ixDecl, ixExpr) where
 
 import Prelude hiding (lookup, foldr)
-import Control.Monad.State.CPS
+import Control.Monad.State.Strict
 import Control.Monad.Trans.Except
 import Control.Monad
 import Control.Applicative hiding (empty)
