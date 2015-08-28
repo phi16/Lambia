@@ -7,8 +7,6 @@ import Data.Char (isSpace)
 import Data.ByteString.Char8 hiding (
   append, map, splitAt,
   dropWhile, head, null, isPrefixOf)
-import Data.Maybe
-import Data.List (isPrefixOf)
 import Data.List.Split (splitOn)
 import qualified Data.Map as M
 import qualified Data.ByteString.Char8 as B
@@ -36,10 +34,10 @@ cf = completeWordWithPrev Nothing " ()`\'-,[]" $ \pv wd -> do
     toComp m = flip map (M.toList m) $ \(k,(Save s,v)) -> let
         k' = unpack k
       in case v of
-        Nothing -> Completion (k'++".") k' False
-        Just e -> if M.null s
+        Nothing -> if op
           then Completion k' k' True
-          else Completion k' k' False
+          else Completion (k'++".") k' False
+        Just e -> Comletion k' k' $ M.null s
     addComp :: ByteString -> Completion -> Completion
     addComp s (Completion a b c) = Completion (t a) (t b) c where
       t x = s' ++ "." ++ x
