@@ -5,9 +5,8 @@ module Lambia.Parse (parseSource, parseLines) where
 import Prelude hiding (concat, null)
 import Control.Monad
 import Control.Applicative hiding (many,optional,(<|>))
-import Data.ByteString.Char8 (ByteString, singleton, cons, snoc, pack, intercalate, concat, null)
+import Data.ByteString.Char8 (ByteString, singleton, snoc, pack, intercalate, concat, null)
 import Text.Parsec
-import Text.Parsec.Char
 import Text.Parsec.ByteString
 
 import Lambia.Types
