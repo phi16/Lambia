@@ -24,7 +24,7 @@ main = do
       str <- readFile $ head fn
       let
         e = do
-          u <- parseSource str
+          u <- parseSource (head fn) str
           indexing u
       case e of
         Left err -> B.putStrLn err

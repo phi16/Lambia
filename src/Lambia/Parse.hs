@@ -27,8 +27,8 @@ Var := VarName | ScopeName
 
 -}
 
-parseSource :: ByteString -> Either ByteString Source
-parseSource s = case parse source "<stdin>" $ s`snoc`'\n' of
+parseSource :: String -> ByteString -> Either ByteString Source
+parseSource fn s = case parse source ('[':(fn++"]")) $ s`snoc`'\n' of
   Left err -> Left $ pack $ show err
   Right e -> Right e
 
@@ -36,7 +36,7 @@ parseLines :: ByteString -> Either ByteString (Either Declare Expr)
 parseLines s = let
     pls :: Parser (Either Declare Expr)
     pls = try (Right <$> (expr <* lf)) <|> (Left <$> decl (Just ""))
-  in case parse (pls <* char '\0') "<interactive>" $ s`snoc`'\0' of
+  in case parse (pls <* char '\0') "[Interactive]" $ s`snoc`'\0' of
     Left err -> Left $ pack $ show err
     Right e -> Right e
 

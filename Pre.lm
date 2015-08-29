@@ -218,30 +218,29 @@ Pre {
   open IO {
     open Primitive.IO
   }
+  Verify {
+    Fact = Fix (\fn.If (Zero n) 1 (Mul n (f (Pred n))))
+
+    N0 = Eq 3 (Add 2 1)
+    N1 = Eq 6 (Mul (Sub 3 1) (Mod 7 4))
+    N2 = Eq 6 (Fact 3)
+    N3 = Eq 7 (Add (Mul (Div 7 3) 3) (Mod 7 3))
+    N4 = Eq 6 ([1,2,3] AsFold Add False)
+    N5 = Forall (Le 0) (Take 5 Nats)
+    N6 = Eq (`2 Mul 5`) (` (`3 Mul 3`) Add 1`)
+    N = [N0,N1,N2,N3,N4,N5,N6] AsFold And True
+
+    l = [3,2,5,1,4] AsList
+    L0 = Eq 5 (Length l)
+    L1 = Eq (Mul 3 5) (Fold Add 0 l)
+    L2 = All (Zip Eq (Take 5 (Tail Nats)) (Sort l))
+    L = [L0,L1,L2] AsFold And True
+
+    open Binary
+    B0 = Eq (Mul 3 3) (Nat ([I,O,O,I] AsFold App B))
+    B = [B0] AsFold And True
+
+    Verified = [N,L,B] AsFold And True
+  }
 }
-Verify {
-  open Pre
-  Fact = Fix (\fn.If (Zero n) 1 (Mul n (f (Pred n))))
-
-  N0 = Eq 3 (Add 2 1)
-  N1 = Eq 6 (Mul (Sub 3 1) (Mod 7 4))
-  N2 = Eq 6 (Fact 3)
-  N3 = Eq 7 (Add (Mul (Div 7 3) 3) (Mod 7 3))
-  N4 = Eq 6 ([1,2,3] AsFold Add False)
-  N5 = Forall (Le 0) (Take 5 Nats)
-  N6 = Eq (`2 Mul 5`) (` (`3 Mul 3`) Add 1`)
-  N = [N0,N1,N2,N3,N4,N5,N6] AsFold And True
-
-  l = [3,2,5,1,4] AsList
-  L0 = Eq 5 (Length l)
-  L1 = Eq (Mul 3 5) (Fold Add 0 l)
-  L2 = All (Zip Eq (Take 5 (Tail Nats)) (Sort l))
-  L = [L0,L1,L2] AsFold And True
-
-  open Binary
-  B0 = Eq (Mul 3 3) (Nat ([I,O,O,I] AsFold App B))
-  B = [B0] AsFold And True
-
-  Verified = [N,L,B] AsFold And True
-}
-Verify.Verified
+Pre.Verify.Verified
