@@ -175,6 +175,9 @@ Pre {
       la = s (Fst u)
       ra = Cons h (s (Snd u))
     } If (Null t) (Cons h Nil) (Append la ra))) : List Nat -> List Nat
+
+    Sum = Fold Add 0
+    Product = Fold Mul 1
     All = Fold And True
     Any = Fold Or False
     Forall = \f.Fold (\xe.And e (f x)) True
