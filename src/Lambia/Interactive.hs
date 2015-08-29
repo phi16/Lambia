@@ -5,7 +5,7 @@ module Lambia.Interactive (interactive) where
 import Prelude hiding (getLine, putStr, putStrLn, filter)
 import Data.Char (isSpace)
 import Data.ByteString.Char8 hiding (
-  append, map, splitAt,
+  append, map, splitAt, init,
   dropWhile, head, null, isPrefixOf)
 import Data.List.Split (splitOn)
 import qualified Data.Map as M
@@ -37,7 +37,7 @@ cf = completeWordWithPrev Nothing " ()`\'-,[]" $ \pv wd -> do
         Nothing -> if op
           then Completion k' k' True
           else Completion (k'++".") k' False
-        Just e -> Comletion k' k' $ M.null s
+        Just e -> Completion k' k' $ M.null s
     addComp :: ByteString -> Completion -> Completion
     addComp s (Completion a b c) = Completion (t a) (t b) c where
       t x = s' ++ "." ++ x
@@ -72,9 +72,27 @@ ev str = do
     Just x -> if B.null $ filter (not . isSpace) x
       then ev str
       else if x == ":q\n"
-        then return ()
-        else proc $ str`B.append`x
+        then outputStrLn "[Quit]"
+        else if B.null str && B.take 3 x == ":s "
+          then search $ B.dropWhile isSpace $ B.drop 3 x
+          else proc $ str`B.append`x
 
+search :: ByteString -> Act ()
+search ss = do
+  Status _ l <- lift $ get
+  let
+    str = init $ unpack ss
+    s = map pack $ splitOn "." str
+    fu :: [ByteString] -> Save -> Maybe Lambda
+    fu [] _ = Nothing
+    fu [x] (Save s) = join $ (fmap fst . snd) <$> M.lookup x s
+    fu (x:xs) (Save s) = case M.lookup x s of
+      Just (s',_) -> fu xs s'
+      Nothing -> Nothing
+  case fu s l of
+    Nothing -> outputStrLn $ "Not in scope : " ++ str
+    Just l -> outputStrLn $ str ++ " = " ++ show l
+  ev ""
 proc :: ByteString -> Act ()
 proc ss = case parseLines ss of
   Left err -> case "unexpected \'\\NUL\'"`isInfixOf`err of
