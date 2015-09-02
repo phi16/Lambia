@@ -71,10 +71,7 @@ replace (Index t) i r
   | otherwise = Index t
 
 instance Store Combi where
-  simple = undefined
-  apply = undefined
-  fromL = lToC
-  fromC = id
-  lambda = cToL
-  combi = id
+  simple = \x y -> (False,y) -- undefined
+  apply = \x -> (x,[x]) -- undefined
+  fromSyn = sToC
 

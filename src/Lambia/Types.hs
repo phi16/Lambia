@@ -3,7 +3,7 @@
 module Lambia.Types (
   Term(..),Expr(..),Declare(..),Source(..),
   Lambda(..),Combi(..),Entity,Save(..),Status(..),
-  Store(..),cToL,lToC) where
+  Store(..),Syn(..),cToL,sToC) where
 
 import Data.Char (ord,chr)
 import Data.Map.Strict hiding (map)
@@ -15,7 +15,8 @@ data Declare = Decl ByteString (Maybe ByteString) Expr | Scope Bool ByteString [
 data Source = Source [Declare] (Maybe Expr) deriving Show
 
 data Lambda = Lambda Lambda | App Lambda Lambda | Index Int | Prim ByteString
-data Combi = C | B | I | K | S | A Combi Combi | P ByteString
+data Combi = C | B | I | S | K | A Combi Combi | P ByteString
+data Syn s = Lm (Syn s) | Ap (Syn s) (Syn s) | Ix Int | Pr ByteString | Og s
 type Entity a = (Save a, Maybe (a, Maybe ByteString))
 newtype Save a = Save (Map ByteString (Entity a)) deriving Show
 
@@ -46,7 +47,7 @@ instance Show Lambda where
     showL b (Index t) i = meld [[lowerN (i-t-1)]]
 
 instance Show Combi where
-  show l = si l "" where
+  show l = np l "" where
     ch = (:)
     si C = ch 'C'
     si B = ch 'B'
@@ -54,19 +55,30 @@ instance Show Combi where
     si S = ch 'S'
     si K = ch 'K'
     si (A a b) = ch '(' . np a . si b . ch ')'
+    si (P s) = (unpack s++)
     np (A a b) = np a . si b
     np x = si x
 
 class Show a => Store a where
   simple :: Int -> a -> (Bool, a)
   apply :: a -> (a, [a])
-  fromL :: Lambda -> a
-  fromC :: Combi -> a
-  lambda :: a -> Lambda
-  combi :: a -> Combi
+  fromSyn :: Syn a -> a
 
 cToL :: Combi -> Lambda
-cToL = undefined
-lToC :: Lambda -> Combi
-lToC = undefined
+cToL x = let
+    l = Lambda
+    a = App
+    i = Index
+  in case x of
+    S -> l $ l $ l $ a (a (i 2) $ i 0) $ a (i 1) $ i 0
+    K -> l $ l $ i 1
+    I -> l $ i 0
+    C -> l $ l $ l $ a (a (i 2) $ i 0) $ i 1
+    B -> l $ l $ l $ a (i 2) $ a (i 1) $ i 0
+    A a b -> App (cToL a) $ cToL b
+    P s -> Prim s
 
+data LC = Co | Bo | Io | So | Ko | Ao LC LC | Po ByteString | Ro Int | Lo LC | Oo Combi deriving Show
+
+sToC :: Syn Combi -> Combi
+sToC x = undefined

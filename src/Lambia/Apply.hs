@@ -73,8 +73,9 @@ replace (Index t) i r
 instance Store Lambda where
   simple = simple
   apply = apply
-  fromL = id
-  fromC = cToL
-  lambda = id
-  combi = lToC
+  fromSyn (Lm x) = Lambda $ fromSyn x
+  fromSyn (Ap x y) = App (fromSyn x) $ fromSyn y
+  fromSyn (Ix n) = Index n
+  fromSyn (Pr s) = Prim s
+  fromSyn (Og i) = i
 

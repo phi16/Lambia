@@ -143,33 +143,33 @@ ixDecl (Open u) = do
       else throwE $ "Not a scope name : "`B.append`u
 
 ixExpr :: Store s => Expr -> Local s s
-ixExpr e = snd . simple 100 <$> iE [] e
+ixExpr e = snd . simple 100 . fromSyn <$> iE [] e
 
-iE :: Store s => [ByteString] -> Expr -> Local s s
+iE :: Store s => [ByteString] -> Expr -> Local s (Syn s)
 iE us (Expr decls t) = do
   s <- get
   forM_ decls $ \(Decl str sc e) -> do
     Status g l <- get
     m <- iE us e
     let
-      g' = append str Nothing m g
-      l' = append str Nothing m l
+      g' = append str Nothing (fromSyn m) g
+      l' = append str Nothing (fromSyn m) l
     put $ Status g' l'
   i <- iT us t
   put s
   return i
 
-iT :: Store s => [ByteString] -> Term -> Local s s
-iT us (Abst args e) = fromL . d args . lambda <$> iE (reverse args ++ us) e where
-  d (x:xs) = Lambda . d xs
+iT :: Store s => [ByteString] -> Term -> Local s (Syn s)
+iT us (Abst args e) = d args <$> iE (reverse args ++ us) e where
+  d (x:xs) = Lm . d xs
   d [] = id
 iT us (Apply a b) = do
-  x <- lambda <$> iT us a
-  y <- lambda <$> iT us b
-  return $ fromL $ App x y
+  x <- iT us a
+  y <- iT us b
+  return $ Ap x y
 iT us (Wrap e) = iE us e
 iT us (Var v) = case elemIndex v us of
-  Just u -> return $ fromL $ Index u
+  Just u -> return $ Ix u
   Nothing -> do
     Status _ l <- get
     let
@@ -184,6 +184,6 @@ iT us (Var v) = case elemIndex v us of
         Just (s',_) -> search xs s'
         _ -> err
     if head us == "Primitive"
-      then return $ fromL $ Prim v
-      else search us l
+      then return $ Pr v
+      else Og <$> search us l
 
