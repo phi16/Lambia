@@ -1,10 +1,10 @@
-module Lambia.Apply () where
+module Lambia.Combi () where
 
 import Prelude hiding (lookup)
 import Data.Map
 
-import Lambia.Types hiding (apply,simple)
-import qualified Lambia.Types as T (apply,simple)
+import Lambia.Types hiding (simple,apply)
+import qualified Lambia.Types as T (simple,apply)
 
 simple :: Int -> Lambda -> (Bool,Lambda)
 simple n l = s l n where
@@ -70,11 +70,11 @@ replace (Index t) i r
   | t == i    = lift t 0 r
   | otherwise = Index t
 
-instance Store Lambda where
-  simple = simple
-  apply = apply
-  fromL = id
-  fromC = cToL
-  lambda = id
-  combi = lToC
+instance Store Combi where
+  simple = undefined
+  apply = undefined
+  fromL = lToC
+  fromC = id
+  lambda = cToL
+  combi = id
 

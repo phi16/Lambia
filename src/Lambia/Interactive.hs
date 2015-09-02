@@ -18,19 +18,19 @@ import System.Console.Haskeline
 
 import Lambia.Parse
 import Lambia.Index
-import Lambia.Apply hiding (lift)
+import Lambia.Apply ()
 import Lambia.Types
 
-type Act a = InputT (StateT Status IO) a
+type Act s a = InputT (StateT (Status s) IO) a
 
-cf :: CompletionFunc (StateT Status IO)
+cf :: Store s => CompletionFunc (StateT (Status s) IO)
 cf = completeWordWithPrev Nothing " ()`\'-,[]" $ \pv wd -> do
   Status _ (Save l) <- get
   let
     (pva,pvb) = splitAt 4 $ dropWhile (==' ') pv
     op = pva == "nepo" && (null pvb || head pvb == ' ')
     wds = map pack $ splitOn "." wd
-    toComp :: M.Map ByteString Entity -> [Completion]
+    toComp :: M.Map ByteString (Entity s) -> [Completion]
     toComp m = flip map (M.toList m) $ \(k,(Save s,v)) -> let
         k' = unpack k
       in case v of
@@ -42,7 +42,7 @@ cf = completeWordWithPrev Nothing " ()`\'-,[]" $ \pv wd -> do
     addComp s (Completion a b c) = Completion (t a) (t b) c where
       t x = s' ++ "." ++ x
       s' = unpack s
-    word :: [ByteString] -> Save -> [Completion]
+    word :: [ByteString] -> Save s -> [Completion]
     word [] (Save s) = toComp s
     word [x] (Save s) = toComp $ M.filterWithKey (\k _ -> x`B.isPrefixOf`k) s
     word (x:xs) (Save s) = case M.lookup x s of
@@ -52,15 +52,15 @@ cf = completeWordWithPrev Nothing " ()`\'-,[]" $ \pv wd -> do
     then M.filter (\(Save x,_) -> not $ M.null x) l
     else l
 
-setting :: Settings (StateT Status IO)
+setting :: Store s => Settings (StateT (Status s) IO)
 setting = setComplete cf defaultSettings
 
-interactive :: (Save,Save) -> IO ()
+interactive :: Store s => (Save s,Save s) -> IO ()
 interactive (s1,s2) = let
     i = runInputT setting $ withInterrupt $ ev empty
   in void $ runStateT i $ Status s1 s2
 
-ev :: ByteString -> Act ()
+ev :: Store s => ByteString -> Act s ()
 ev str = do
   let hdl :: MonadIO m => SomeException -> m (Maybe String)
       hdl _ = return Nothing
@@ -77,13 +77,13 @@ ev str = do
           then search $ B.dropWhile isSpace $ B.drop 3 x
           else proc $ str`B.append`x
 
-search :: ByteString -> Act ()
+search :: Store s => ByteString -> Act s ()
 search ss = do
   Status _ l <- lift $ get
   let
     str = init $ unpack ss
     s = map pack $ splitOn "." str
-    fu :: [ByteString] -> Save -> Maybe Lambda
+    fu :: [ByteString] -> Save s -> Maybe s
     fu [] _ = Nothing
     fu [x] (Save s) = join $ (fmap fst . snd) <$> M.lookup x s
     fu (x:xs) (Save s) = case M.lookup x s of
@@ -93,7 +93,7 @@ search ss = do
     Nothing -> outputStrLn $ "Not in scope : " ++ str
     Just l -> outputStrLn $ str ++ " = " ++ show l
   ev ""
-proc :: ByteString -> Act ()
+proc :: Store s => ByteString -> Act s ()
 proc ss = case parseLines ss of
   Left err -> case "unexpected \'\\NUL\'"`isInfixOf`err of
     True -> do
@@ -115,9 +115,9 @@ proc ss = case parseLines ss of
       Right (Right e') -> do
         let
           v = fst $ apply e'
-          hdl :: MonadIO m => SomeException -> InputT m Status
-          hdl _ = outputStrLn "[Interrupt]" >> return s'
-        handle hdl $ do
+          hdl :: MonadIO m => a -> SomeException -> InputT m a
+          hdl a _ = outputStrLn "[Interrupt]" >> return a
+        handle (hdl s') $ do
           outputStrLn $ show v
           return $ case s' of
             Status a u -> Status a $ append "it" Nothing v u

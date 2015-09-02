@@ -1,11 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Lambia.Index (nil, indexing, append, ixDecl, ixExpr) where
+module Lambia.Index (nil, indexing, append, ixDecl, ixExpr, Indexed) where
 
 import Prelude hiding (lookup, foldr)
 import Control.Monad.State.Strict
 import Control.Monad.Trans.Except
-import Control.Monad
 import Control.Applicative hiding (empty)
 import Data.Char
 import Data.ByteString.Char8 hiding (append,empty,reverse,foldr,last,elemIndex,head,length)
@@ -14,23 +13,22 @@ import Data.List (elemIndex)
 import Data.Map.Strict hiding (split)
 import Data.Traversable
 import Data.Maybe (isJust, fromMaybe)
-import qualified Data.Sequence as S
 
 import Lambia.Types
-import Lambia.Apply
 
-type Local a = ExceptT ByteString (State Status) a
+type Local s a = ExceptT ByteString (State (Status s)) a
+type Indexed s = Either ByteString (Maybe s,(Save s,Save s))
 
-nil :: Save
+nil :: Save s
 nil = Save empty
 
-ini :: Status
+ini :: Status s
 ini = Status nil nil
 
-pass :: Status -> (Save, Save)
+pass :: Status s -> (Save s, Save s)
 pass (Status a b) = (a,b)
 
-indexing :: Source -> Either ByteString (Maybe Lambda,(Save,Save))
+indexing :: Store s => Source -> Indexed s
 indexing (Source decls e) = let
     (e',s) = flip runState ini $ runExceptT $ do
       mapM_ ixDecl decls
@@ -39,27 +37,27 @@ indexing (Source decls e) = let
     Left l -> Left l
     Right d -> Right (d,pass s)
 
-append :: ByteString -> Maybe ByteString -> Lambda -> Save -> Save
+append :: ByteString -> Maybe ByteString -> s -> Save s -> Save s
 append v sc e (Save s) = Save $ let
     u = lookup v s
   in case u of
     Just w  -> insert v (fst w,Just (e,sc)) s
     Nothing -> insert v (nil,Just (e,sc)) s
 
-match :: [ByteString] -> Save -> Maybe Entity
+match :: [ByteString] -> Save s -> Maybe (Entity s)
 match [] e = Nothing
 match [x] (Save e) = lookup x e
 match (x:xs) (Save e) = case lookup x e of
   Just (y,_) -> match xs y
   Nothing -> Nothing
 
-merge :: [ByteString] -> Save -> Save -> Local Save
+merge :: [ByteString] -> Save s -> Save s -> Local s (Save s)
 merge [] (Save l) (Save r) = do
   let
     meld :: ByteString ->
-            Entity ->
-            Entity ->
-            Maybe (Either ([ByteString] -> [ByteString]) Entity)
+            Entity s ->
+            Entity s ->
+            Maybe (Either ([ByteString] -> [ByteString]) (Entity s))
     meld key (Save a,v) (Save b,w) = Just $ let
         c = mu a b
         c' = mapMaybe right c
@@ -81,7 +79,7 @@ merge [] (Save l) (Save r) = do
       f (Left x) Nothing = Just x
       f (Right _) (Just xs) = Just xs
       f (Right m) Nothing = Nothing
-    right :: Either ([ByteString] -> [ByteString]) Entity -> Maybe Entity
+    right :: Either ([ByteString] -> [ByteString]) (Entity s) -> Maybe (Entity s)
     right (Left _) = Nothing
     right (Right x) = Just x
     u' = mapMaybe right u
@@ -96,7 +94,7 @@ merge (x:xs) l (Save r) = Save <$> case lookup x r of
     u <- merge xs l nil
     return $ insert x (u,Nothing) r
 
-ixDecl :: Declare -> Local ()
+ixDecl :: Store s => Declare -> Local s ()
 ixDecl (Decl str scope e) = do
   Status g l <- get
   m <- ixExpr e
@@ -144,10 +142,10 @@ ixDecl (Open u) = do
       then return ()
       else throwE $ "Not a scope name : "`B.append`u
 
-ixExpr :: Expr -> Local Lambda
+ixExpr :: Store s => Expr -> Local s s
 ixExpr e = snd . simple 100 <$> iE [] e
 
-iE :: [ByteString] -> Expr -> Local Lambda
+iE :: Store s => [ByteString] -> Expr -> Local s s
 iE us (Expr decls t) = do
   s <- get
   forM_ decls $ \(Decl str sc e) -> do
@@ -161,20 +159,23 @@ iE us (Expr decls t) = do
   put s
   return i
 
-iT :: [ByteString] -> Term -> Local Lambda
-iT us (Abst args e) = d args <$> iE (reverse args ++ us) e where
+iT :: Store s => [ByteString] -> Term -> Local s s
+iT us (Abst args e) = fromL . d args . lambda <$> iE (reverse args ++ us) e where
   d (x:xs) = Lambda . d xs
   d [] = id
-iT us (Apply a b) = App <$> iT us a <*> iT us b
+iT us (Apply a b) = do
+  x <- lambda <$> iT us a
+  y <- lambda <$> iT us b
+  return $ fromL $ App x y
 iT us (Wrap e) = iE us e
 iT us (Var v) = case elemIndex v us of
-  Just u -> return $ Index u
+  Just u -> return $ fromL $ Index u
   Nothing -> do
     Status _ l <- get
     let
       us = split '.' v
       err = throwE $ "Not in scope : "`B.append`v
-      search :: [ByteString] -> Save -> Local Lambda
+      -- search :: [ByteString] -> Save s -> Local s s
       search [] s = err
       search [x] (Save s) = case lookup x s of
         Just (_,Just (e,_)) -> return e
@@ -183,6 +184,6 @@ iT us (Var v) = case elemIndex v us of
         Just (s',_) -> search xs s'
         _ -> err
     if head us == "Primitive"
-      then return $ Prim v
+      then return $ fromL $ Prim v
       else search us l
 
