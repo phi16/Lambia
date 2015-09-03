@@ -100,37 +100,42 @@ sToC x = just $ fst $ la (toLC x) 0 empty where
   la (Lo (Ro 0)) d m = (Io, delete d m)
   la (Lo (Ro n)) d m = let
       m' = insertWith (+) ((d+1)-n-1) 1 m
-    in (Ao Ko $ decr 0 $ Ro n, m')
+    in (decr 0 $ Ao Ko $ Ro n, m')
   la (Lo (Lo e)) d m = let
       (e',m') = la e (d+2) m
     in case lookup d m' of
       Nothing -> let
           (e'',_) = la (Lo e') (d+1) m
-        in (Ao Ko $ decr 0 e'', delete d m')
+        in (decr 0 $ Ao Ko e'', delete d $ delete (d+1) m')
       Just v  -> let
           (e'',_) = la (Lo e') (d+1) m
           (e''',p) = la (Lo e'') d m
-        in case e''' of
-          Lo (Ao r (Ro 0)) -> (decr 0 r,p)
-          _ -> (e''',p)
+        in (e''', delete d $ delete (d+1) p)
   la (Lo (Ao x y)) d m = let
       (x',m') = la x (d+1) m
       (y',m'') = la y (d+1) m'
     in case (lookup d m', lookup d m'') of
-      (Nothing,Nothing) -> (Ao Ko $ decr 0 $ Ao x' y', delete d m'')
-      (Nothing,Just 1) -> (decr 0 x', delete d m'')
+      (Nothing,Nothing) -> (decr 0 $ Ao Ko $ Ao x' y', delete d m'')
+      (Nothing,Just 1)
+        | Ro 0 <- y' -> (decr 0 x', delete d m'')
       (Nothing,Just x) -> let
           (y'',_) = la (Lo y') (d+1) m'
-        in (decr d $ (Ao (Ao Bo x') y''), delete d m'')
+        in (Ao (Ao Bo $ decr 0 x') y'', delete d m'')
       (Just x,Just y)
         | x == y -> let
             (x'',_) = la (Lo x') (d+1) m
-          in (decr d $ (Ao (Ao Co x'') y'), delete d m'')
+          in (Ao (Ao Co x'') $ decr 0 y', delete d m'')
         | x < y -> let
             (x'',_) = la (Lo x') (d+1) m
             (y'',_) = la (Lo y') (d+1) m'
-          in (decr d $ (Ao (Ao So x'') y''), delete d m'')
-  la l d m = (l,m)
+          in (Ao (Ao So x'') y'', delete d m'')
+  la (Lo x) d m = (Ao Ko x, m)
+  la Co d m = (Co, m)
+  la Bo d m = (Bo, m)
+  la So d m = (So, m)
+  la Io d m = (Io, m)
+  la Ko d m = (Ko, m)
+  la o@(Oo _) d m = (o, m)
 
   decr :: Int -> LC -> LC
   decr x (Lo l) = Lo $ decr (x+1) l
