@@ -6,28 +6,6 @@ import Data.Map
 import Lambia.Types hiding (simple,apply)
 import qualified Lambia.Types as T (simple,apply)
 
-simple :: Int -> Lambda -> (Bool,Lambda)
-simple n l = s l n where
-  s :: Lambda -> Int -> (Bool,Lambda)
-  s e 0
-    | size e == size l = (True,e)
-    | size e < size l = (True,snd $ simple n e)
-    | otherwise = (False,l)
-  s e x = case beta e 0 empty of
-    (False,_,_) -> s e 0
-    (True,e',_) -> s e' (x-1)
-  size :: Lambda -> Int
-  size (Lambda x) = 1 + size x
-  size (App l r) = size l + size r
-  size _ = 1
-
-apply :: Lambda -> (Lambda, [Lambda])
-apply l = case beta l 0 empty of
-  (False,_,_) -> (l,[l])
-  (True,l',_) -> let
-      (x,xy) = apply l'
-    in (x,l:xy)
-
 beta :: Lambda -> Int -> Map Int Int -> (Bool, Lambda, Map Int Int)
 beta (Lambda l) d p = let
     (b,l',m) = beta l (d+1) p

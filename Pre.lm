@@ -18,6 +18,7 @@ Pre {
     W = \xy.x y y : (a -> a -> b) -> a -> b
     X = \x.x S K : (((a -> b -> c) -> (a -> b) -> a -> c) -> (d -> e -> d) -> f) -> f
     Y = \f.(\x.f (x x)) (\x.f (x x)) : (a -> a) -> a
+    open Primitive.Combinator
   }
   open Bool {
     // Bool : a -> a -> a

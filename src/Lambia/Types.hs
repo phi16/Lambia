@@ -5,9 +5,10 @@ module Lambia.Types (
   Lambda(..),Combi(..),Entity,Save(..),Status(..),
   Store(..),Syn(..),cToL,sToC) where
 
+import Prelude hiding (lookup)
 import Data.Char (ord,chr)
 import Data.Map.Strict hiding (map)
-import Data.ByteString.Char8 (ByteString)
+import Data.ByteString.Char8 (ByteString, pack, unpack)
 
 data Term = Abst [ByteString] Expr | Apply Term Term | Wrap Expr | Var ByteString deriving Show
 data Expr = Expr [Declare] Term deriving Show
@@ -81,4 +82,70 @@ cToL x = let
 data LC = Co | Bo | Io | So | Ko | Ao LC LC | Po ByteString | Ro Int | Lo LC | Oo Combi deriving Show
 
 sToC :: Syn Combi -> Combi
-sToC x = undefined
+sToC x = just $ fst $ la (toLC x) 0 empty where
+  toLC :: Syn Combi -> LC
+  toLC (Lm x) = Lo $ toLC x
+  toLC (Ap x y) = Ao (toLC x) $ toLC y
+  toLC (Ix n) = Ro n
+  toLC (Pr s) = Po s
+  toLC (Og i) = Oo i
+
+  la :: LC -> Int -> Map Int Int -> (LC, Map Int Int)
+  la (Ro x) d m = (Ro x,insertWith (+) (d-x-1) 1 m)
+  la (Ao x y) d m = let
+      (x',m') = la x d m
+      (y',m'') = la y d m'
+    in (Ao x' y',m'')
+  la (Po s) d m = (Po s,m)
+  la (Lo (Ro 0)) d m = (Io, delete d m)
+  la (Lo (Ro n)) d m = let
+      m' = insertWith (+) ((d+1)-n-1) 1 m
+    in (Ao Ko $ decr 0 $ Ro n, m')
+  la (Lo (Lo e)) d m = let
+      (e',m') = la e (d+2) m
+    in case lookup d m' of
+      Nothing -> let
+          (e'',_) = la (Lo e') (d+1) m
+        in (Ao Ko $ decr 0 e'', delete d m')
+      Just v  -> let
+          (e'',_) = la (Lo e') (d+1) m
+          (e''',p) = la (Lo e'') d m
+        in case e''' of
+          Lo (Ao r (Ro 0)) -> (decr 0 r,p)
+          _ -> (e''',p)
+  la (Lo (Ao x y)) d m = let
+      (x',m') = la x (d+1) m
+      (y',m'') = la y (d+1) m'
+    in case (lookup d m', lookup d m'') of
+      (Nothing,Nothing) -> (Ao Ko $ decr 0 $ Ao x' y', delete d m'')
+      (Nothing,Just 1) -> (decr 0 x', delete d m'')
+      (Nothing,Just x) -> let
+          (y'',_) = la (Lo y') (d+1) m'
+        in (decr d $ (Ao (Ao Bo x') y''), delete d m'')
+      (Just x,Just y)
+        | x == y -> let
+            (x'',_) = la (Lo x') (d+1) m
+          in (decr d $ (Ao (Ao Co x'') y'), delete d m'')
+        | x < y -> let
+            (x'',_) = la (Lo x') (d+1) m
+            (y'',_) = la (Lo y') (d+1) m'
+          in (decr d $ (Ao (Ao So x'') y''), delete d m'')
+  la l d m = (l,m)
+
+  decr :: Int -> LC -> LC
+  decr x (Lo l) = Lo $ decr (x+1) l
+  decr x (Ao l r) = Ao (decr x l) (decr x r)
+  decr x (Ro n)
+    | n > x = Ro $ n-1
+    | otherwise = Ro n
+  decr x y = y
+
+  just Co = C
+  just Bo = B
+  just Io = I
+  just So = S
+  just Ko = K
+  just (Oo x) = x
+  just (Ao x y) = A (just x) $ just y
+  just (Po s) = P s
+  just x = P (pack $ show x)
