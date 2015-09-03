@@ -6,50 +6,30 @@ import Data.Map
 import Lambia.Types hiding (simple,apply)
 import qualified Lambia.Types as T (simple,apply)
 
-beta :: Lambda -> Int -> Map Int Int -> (Bool, Lambda, Map Int Int)
-beta (Lambda l) d p = let
-    (b,l',m) = beta l (d+1) p
-    u = delete d m
-  in case lookup d m of
-    Just 1 -> case l' of
-      App y (Index 0) -> (True,decr 0 y,u)
-      _ -> (b,Lambda l',u)
-    _ -> (b,Lambda l',u)
-beta (App l r) d p = case l of
-  Lambda u -> (True,replace u 0 r,p)
-  _        -> case beta l d p of
-    (True,l',m) -> case l' of
-      Lambda u' -> beta (App l' r) d m
-      _         -> (True,App l' r,m)
-    (False,_,m) -> case beta r d m of
-      (True,r',m') -> (True,App l r',m')
-      (False,_,m') -> (False,App l r,m')
-beta (Index x) d p = (False,Index x,insertWith (+) (d-x) 1 p)
+simple :: Int -> Combi -> (Bool, Combi)
+simple = undefined
 
-decr :: Int -> Lambda -> Lambda
-decr x (Lambda l) = Lambda $ decr (x+1) l
-decr x (App l r) = App (decr x l) (decr x r)
-decr x (Index t)
-  | t > x     = Index (t-1)
-  | otherwise = Index t
+apply :: Combi -> (Combi, [Combi])
+apply i = a i [] where
+  a x xs = case repl x of
+    (True, x') -> a x' (x:xs)
+    (False, _) -> (x,xs)
 
-lift :: Int -> Int -> Lambda -> Lambda
-lift x y (Lambda l) = Lambda $ lift x (y+1) l
-lift x y (App l r) = App (lift x y l) (lift x y r)
-lift x y (Index t)
-  | t < y = Index t
-  | otherwise = Index (t+x)
-
-replace :: Lambda -> Int -> Lambda -> Lambda
-replace (Lambda l) i r = Lambda $ replace l (i+1) r
-replace (App m n) i r = App (replace m i r) (replace n i r)
-replace (Index t) i r
-  | t > i     = Index (t-1)
-  | t == i    = lift t 0 r
-  | otherwise = Index t
+repl :: Combi -> (Bool, Combi)
+repl (A I x) = (True, x)
+repl (A (A K x) y) = (True, x)
+repl (A (A (A S x) y) z) = (True, A (A x z) (A y z))
+repl (A (A (A C x) y) z) = (True, A (A x z) y)
+repl (A (A (A B x) y) z) = (True, A x (A y z))
+repl (A x y) = case repl x of
+  (True, x') -> (True, A x' y)
+  (False, _) -> case repl y of
+    (True, y') -> (True, A x y')
+    (False, _) -> (False, A x y)
+repl x = (False, x)
 
 instance Store Combi where
   simple = \x y -> (False,y) -- undefined
-  apply = \x -> (x,[x]) -- undefined
+  apply = apply
   fromSyn = sToC
 
