@@ -15,3 +15,21 @@ Fix = (\a.(\b.a (b b)) (\b.a (b b)))
 > :q
 [Quit]
 $
+```
+
+## Combinator-As-Backend Support
+```
+$ Lambia -s Pre.lm -i
+> [Source]
+K
+> open Pre
+> :s Fix
+Fix = S(CB(SII))(CB(SII))
+> Pow 2 3
+B(SB(SB(KI)))(B(SB(SB(KI)))(B(SB(SB(KI)))I))
+> it Succ 0
+SB(SB(SB(SB(SB(SB(SB(SB(KI))))))))
+> :q
+[Quit]
+$
+```
