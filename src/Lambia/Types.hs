@@ -16,7 +16,7 @@ data Declare = Decl ByteString (Maybe ByteString) Expr | Scope Bool ByteString [
 data Source = Source [Declare] (Maybe Expr) deriving Show
 
 data Lambda = Lambda Lambda | App Lambda Lambda | Index Int | Prim ByteString
-data Combi = C | B | I | S | K | A Combi Combi | P ByteString
+data Combi = C | B | I | S | K | V Int | A Combi Combi | P ByteString
 data Syn s = Lm (Syn s) | Ap (Syn s) (Syn s) | Ix Int | Pr ByteString | Og s
 type Entity a = (Save a, Maybe (a, Maybe ByteString))
 newtype Save a = Save (Map ByteString (Entity a)) deriving Show
@@ -79,7 +79,7 @@ cToL x = let
     A a b -> App (cToL a) $ cToL b
     P s -> Prim s
 
-data LC = Co | Bo | Io | So | Ko | Ao LC LC | Po ByteString | Ro Int | Lo LC | Oo Combi deriving Show
+data LC = Co | Bo | Io | So | Ko | Ao LC LC | Po ByteString | Ro Int | Lo LC deriving Show
 
 sToC :: Syn Combi -> Combi
 sToC x = just $ fst $ la (toLC x) 0 empty where
@@ -88,7 +88,15 @@ sToC x = just $ fst $ la (toLC x) 0 empty where
   toLC (Ap x y) = Ao (toLC x) $ toLC y
   toLC (Ix n) = Ro n
   toLC (Pr s) = Po s
-  toLC (Og i) = Oo i
+  toLC (Og i) = cToLC i
+  cToLC (A x y) = Ao (cToLC x) (cToLC y)
+  cToLC (P s) = Po s
+  cToLC (V n) = Ro n
+  cToLC C = Co
+  cToLC K = Ko
+  cToLC I = Io
+  cToLC S = So
+  cToLC B = Bo
 
   la :: LC -> Int -> Map Int Int -> (LC, Map Int Int)
   la (Ro x) d m = (Ro x,insertWith (+) (d-x-1) 1 m)
@@ -135,7 +143,6 @@ sToC x = just $ fst $ la (toLC x) 0 empty where
   la So d m = (So, m)
   la Io d m = (Io, m)
   la Ko d m = (Ko, m)
-  la o@(Oo _) d m = (o, m)
 
   decr :: Int -> LC -> LC
   decr x (Lo l) = Lo $ decr (x+1) l
@@ -150,7 +157,6 @@ sToC x = just $ fst $ la (toLC x) 0 empty where
   just Io = I
   just So = S
   just Ko = K
-  just (Oo x) = x
   just (Ao x y) = A (just x) $ just y
   just (Po s) = P s
-  just x = P (pack $ show x)
+  just (Ro n) = V n
