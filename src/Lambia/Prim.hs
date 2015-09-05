@@ -42,13 +42,13 @@ foldPrim = foldl meld pnil where
   meld f ([], p) = merge f p
   meld (Pri f) (x:xs, p) = Pri $ \s -> case f s of
     Nothing -> if s == x then Just (meld pnil (xs,p), Nothing) else Nothing
-    Just (pr,m) -> Just (meld pr (xs,p),m)
+    Just (pr,m) -> if s == x then Just (meld pr (xs,p),m) else Just (pr,m)
 
 prs :: [([ByteString], Pri s)]
 prs = [
     (["Primitive","Nat"], genNats),
-    (["Primitive","Combinator"], pnil),
-    (["Primitive","Int"], pnil),
+    (["Primitive","Combinator"], genCombi),
+    (["Primitive","Int","I"], pnil),
     (["Primitive","Integer"], pnil),
     (["Primitive","Char"], pnil),
     (["Primitive","Decimal"], pnil),
@@ -62,7 +62,7 @@ iterateN n f = let g = iterateN (n`div`2) f in case even n of
   False -> g . g . f
 
 runParser :: Parser a -> ByteString -> Maybe a
-runParser p s = case parseOnly p s of
+runParser p s = case parseOnly (p <* endOfInput) s of
   Left _ -> Nothing
   Right x -> Just x
 
@@ -75,3 +75,17 @@ genNats :: Pri s
 genNats = runParser decimal `exact` \d -> 
   Lm $ Lm $ iterateN d (Ap (Ix 1)) (Ix 0)
 
+genCombi :: Pri s
+genCombi = let
+    s = Lm $ Lm $ Lm $ Ap (Ap (Ix 2) $ Ix 0) $ Ap (Ix 1) $ Ix 0
+    k = Lm $ Lm $ Ix 1
+    i = Lm $ Ix 0
+    c = Lm $ Lm $ Lm $ Ap (Ap (Ix 2) $ Ix 0) $ Ix 1
+    b = Lm $ Lm $ Lm $ Ap (Ix 2) $ Ap (Ix 1) $ Ix 0
+    ps = many' $ satisfy $ inClass "SKICB"
+    toC 'S' = s
+    toC 'K' = k
+    toC 'I' = i
+    toC 'C' = c
+    toC 'B' = b
+  in runParser ps `exact` \ds -> foldl1 Ap $ map toC ds

@@ -67,7 +67,7 @@ merge [] (Save (l,lp)) (Save (r,rp)) = do
         c = mu a b
         c' = mapMaybe right c
         x = v <|> w
-        p' x = ap x <|> bp x
+        p' = mixP ap bp
       in case j c of
         Just e -> Left e
         Nothing -> case isJust v && isJust w of
@@ -89,7 +89,14 @@ merge [] (Save (l,lp)) (Save (r,rp)) = do
     right (Left _) = Nothing
     right (Right x) = Just x
     u' = mapMaybe right u
-    p x = lp x <|> rp x
+    mixE (Save (s,sp),v) (Save (t,tp),w) = (Save (mixM s t, mixP sp tp), v <|> w)
+    mixM = unionWith mixE
+    mixP p q s = case (p s, q s) of
+      (Nothing, Nothing) -> Nothing
+      (Just e, Nothing) -> Just e
+      (Nothing, Just e) -> Just e
+      (Just e, Just e') -> Just $ mixE e e'
+    p = mixP lp rp
   case j u of
     Just e  -> throwE $ B.append "Duplicate variable : " $ B.intercalate ", " $ e []
     Nothing -> return $ Save (u',p)
