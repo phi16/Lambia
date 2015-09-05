@@ -13,6 +13,7 @@ import Lambia.Parse
 import Lambia.Index
 import Lambia.Types
 import Lambia.Combi ()
+import Lambia.Prim
 import Lambia.Interactive
 
 main :: IO ()
@@ -21,8 +22,8 @@ main = do
   let (opt,fn) = partition ((=='-') . head) args
   if null fn
     then if "-s"`elem`opt
-      then interactive (nil,nil :: Save Combi)
-      else interactive (nil,nil :: Save Lambda)
+      then interactive (prim,prim :: Save Combi)
+      else interactive (prim,prim :: Save Lambda)
     else do
       str <- readFile $ head fn
       if "-s"`elem`opt

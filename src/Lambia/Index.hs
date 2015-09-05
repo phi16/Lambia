@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 
 module Lambia.Index (nil, indexing, append, ixDecl, ixExpr, Indexed) where
 
@@ -15,15 +16,19 @@ import Data.Traversable
 import Data.Maybe (isJust, fromMaybe)
 
 import Lambia.Types
+import Lambia.Prim
 
 type Local s a = ExceptT ByteString (State (Status s)) a
 type Indexed s = Either ByteString (Maybe s,(Save s,Save s))
 
-nil :: Save s
-nil = Save empty
+none :: Primitive s
+none = const Nothing
 
-ini :: Status s
-ini = Status nil nil
+nil :: Save s
+nil = Save (empty,none)
+
+ini :: Store s => Status s
+ini = Status prim prim
 
 pass :: Status s -> (Save s, Save s)
 pass (Status a b) = (a,b)
@@ -38,7 +43,7 @@ indexing (Source decls e) = let
     Right d -> Right (d,pass s)
 
 append :: ByteString -> Maybe ByteString -> s -> Save s -> Save s
-append v sc e (Save s) = Save $ let
+append v sc e (Save (s,p)) = Save $ (,p) $ let
     u = lookup v s
   in case u of
     Just w  -> insert v (fst w,Just (e,sc)) s
@@ -46,29 +51,30 @@ append v sc e (Save s) = Save $ let
 
 match :: [ByteString] -> Save s -> Maybe (Entity s)
 match [] e = Nothing
-match [x] (Save e) = lookup x e
-match (x:xs) (Save e) = case lookup x e of
+match [x] (Save (e,u)) = lookup x e <|> u x
+match (x:xs) (Save (e,u)) = case lookup x e <|> u x of
   Just (y,_) -> match xs y
   Nothing -> Nothing
 
 merge :: [ByteString] -> Save s -> Save s -> Local s (Save s)
-merge [] (Save l) (Save r) = do
+merge [] (Save (l,lp)) (Save (r,rp)) = do
   let
     meld :: ByteString ->
             Entity s ->
             Entity s ->
             Maybe (Either ([ByteString] -> [ByteString]) (Entity s))
-    meld key (Save a,v) (Save b,w) = Just $ let
+    meld key (Save (a,ap),v) (Save (b,bp),w) = Just $ let
         c = mu a b
         c' = mapMaybe right c
         x = v <|> w
+        p' x = ap x <|> bp x
       in case j c of
         Just e -> Left e
         Nothing -> case isJust v && isJust w of
-          False -> Right (Save c',x)
+          False -> Right (Save (c',p'),x)
           True  -> case (v,w) of
             (Just (_,vs), Just (_,ws))
-              | vs == ws  -> Right (Save c',x)
+              | vs == ws  -> Right (Save (c',p'),x)
               | otherwise -> let
                   i = fromMaybe "[Outer]"
                 in Left (B.concat ["{",i vs,"|",i ws,"}.",key]:)
@@ -83,16 +89,17 @@ merge [] (Save l) (Save r) = do
     right (Left _) = Nothing
     right (Right x) = Just x
     u' = mapMaybe right u
+    p x = lp x <|> rp x
   case j u of
     Just e  -> throwE $ B.append "Duplicate variable : " $ B.intercalate ", " $ e []
-    Nothing -> return $ Save u'
-merge (x:xs) l (Save r) = Save <$> case lookup x r of
+    Nothing -> return $ Save (u',p)
+merge (x:xs) l@(Save (_,lp)) (Save (r,rp)) = Save <$> case lookup x r of
   Just (e,v) -> do
     u <- merge xs l e
-    return $ insert x (u,v) r
+    return (insert x (u,v) r, rp)
   Nothing -> do
     u <- merge xs l nil
-    return $ insert x (u,Nothing) r
+    return (insert x (u,Nothing) r, rp)
 
 ixDecl :: Store s => Declare -> Local s ()
 ixDecl (Decl str scope e) = do
@@ -138,9 +145,7 @@ ixDecl (Open u) = do
             | otherwise -> (l',g')
           Nothing -> (l',g')
       put $ Status g'' l''
-    Nothing -> if head us == "Primitive"
-      then return ()
-      else throwE $ "Not a scope name : "`B.append`u
+    Nothing -> throwE $ "Not a scope name : "`B.append`u
 
 ixExpr :: Store s => Expr -> Local s s
 ixExpr e = snd . simple 100 . fromSyn <$> iE [] e
@@ -177,13 +182,11 @@ iT us (Var v) = case elemIndex v us of
       err = throwE $ "Not in scope : "`B.append`v
       -- search :: [ByteString] -> Save s -> Local s s
       search [] s = err
-      search [x] (Save s) = case lookup x s of
+      search [x] (Save (s,u)) = case lookup x s <|> u x of
         Just (_,Just (e,_)) -> return e
         _ -> err
-      search (x:xs) (Save s) = case lookup x s of
+      search (x:xs) (Save (s,u)) = case lookup x s <|> u x of
         Just (s',_) -> search xs s'
         _ -> err
-    if head us == "Primitive"
-      then return $ Pr v
-      else Og <$> search us l
+    Og <$> search us l
 

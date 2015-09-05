@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 
 module Lambia.Interactive (interactive) where
 
@@ -25,13 +26,13 @@ type Act s a = InputT (StateT (Status s) IO) a
 
 cf :: Store s => CompletionFunc (StateT (Status s) IO)
 cf = completeWordWithPrev Nothing " ()`\'-,[]" $ \pv wd -> do
-  Status _ (Save l) <- get
+  Status _ (Save (l,_)) <- get
   let
     (pva,pvb) = splitAt 4 $ dropWhile (==' ') pv
     op = pva == "nepo" && (null pvb || head pvb == ' ')
     wds = map pack $ splitOn "." wd
     toComp :: M.Map ByteString (Entity s) -> [Completion]
-    toComp m = flip map (M.toList m) $ \(k,(Save s,v)) -> let
+    toComp m = flip map (M.toList m) $ \(k,(Save (s,_),v)) -> let
         k' = unpack k
       in case v of
         Nothing -> if op
@@ -43,13 +44,13 @@ cf = completeWordWithPrev Nothing " ()`\'-,[]" $ \pv wd -> do
       t x = s' ++ "." ++ x
       s' = unpack s
     word :: [ByteString] -> Save s -> [Completion]
-    word [] (Save s) = toComp s
-    word [x] (Save s) = toComp $ M.filterWithKey (\k _ -> x`B.isPrefixOf`k) s
-    word (x:xs) (Save s) = case M.lookup x s of
+    word [] (Save (s,_)) = toComp s
+    word [x] (Save (s,_)) = toComp $ M.filterWithKey (\k _ -> x`B.isPrefixOf`k) s
+    word (x:xs) (Save (s,_)) = case M.lookup x s of
       Nothing -> []
       Just (y,_) -> map (addComp x) $ word xs y
-  return $ word wds $ Save $ if op
-    then M.filter (\(Save x,_) -> not $ M.null x) l
+  return $ word wds $ Save $ (,const Nothing) $ if op
+    then M.filter (\(Save (x,_),_) -> not $ M.null x) l
     else l
 
 setting :: Store s => Settings (StateT (Status s) IO)
@@ -85,8 +86,8 @@ search ss = do
     s = map pack $ splitOn "." str
     fu :: [ByteString] -> Save s -> Maybe s
     fu [] _ = Nothing
-    fu [x] (Save s) = join $ (fmap fst . snd) <$> M.lookup x s
-    fu (x:xs) (Save s) = case M.lookup x s of
+    fu [x] (Save (s,u)) = join $ (fmap fst . snd) <$> (M.lookup x s <|> u x)
+    fu (x:xs) (Save (s,u)) = case M.lookup x s <|> u x of
       Just (s',_) -> fu xs s'
       Nothing -> Nothing
   case fu s l of

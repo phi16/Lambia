@@ -2,7 +2,7 @@
 
 module Lambia.Types (
   Term(..),Expr(..),Declare(..),Source(..),
-  Lambda(..),Combi(..),Entity,Save(..),Status(..),
+  Lambda(..),Combi(..),Entity,Primitive,Save(..),Status(..),
   Store(..),Syn(..),cToL,sToC) where
 
 import Prelude hiding (lookup)
@@ -19,7 +19,8 @@ data Lambda = Lambda Lambda | App Lambda Lambda | Index Int | Prim ByteString
 data Combi = C | B | I | S | K | V Int | A Combi Combi | P ByteString
 data Syn s = Lm (Syn s) | Ap (Syn s) (Syn s) | Ix Int | Pr ByteString | Og s
 type Entity a = (Save a, Maybe (a, Maybe ByteString))
-newtype Save a = Save (Map ByteString (Entity a)) deriving Show
+type Primitive a = ByteString -> Maybe (Entity a)
+newtype Save a = Save (Map ByteString (Entity a), Primitive a)
 
 data Status a = Status (Save a) (Save a)
 

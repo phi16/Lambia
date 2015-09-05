@@ -22,6 +22,7 @@ executable Lambia
   build-depends:       base >=4.6 && <4.7,
                        bytestring,
                        parsec,
+                       attoparsec,
                        containers,
                        transformers,
                        haskeline,
