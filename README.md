@@ -1,5 +1,6 @@
 # Lambia
 Lambia /lamia/ the practical Lambda-Calculus language
+http://miyus.dip.jp/lambia
 
 ## Usage
 ```
