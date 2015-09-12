@@ -203,6 +203,12 @@ Pre {
   open IO {
     open Primitive.IO
   }
+  Math {
+    Factorise = \n.(Fix (\fab.{
+      m = Zero (Mod a b)
+      c = Div a b
+    } If (Le a 1) Nil (If m (Cons b (f c b)) (f a (Succ b))))) n 2
+  }
   Verify {
     Fact = Fix (\fn.If (Zero n) 1 (Mul n (f (Pred n))))
 
