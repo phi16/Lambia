@@ -13,26 +13,37 @@ import Lambia.Parse
 import Lambia.Index
 import Lambia.Types
 import Lambia.Combi ()
+import Lambia.Unlambda ()
 import Lambia.Prim
 import Lambia.Interactive
 
 main :: IO ()
 main = do
   args <- getArgs
-  let (opt,fn) = partition ((=='-') . head) args
+  let
+    (opt,fn) = partition ((=='-') . head) args
+    mode = if "-u"`elem`opt
+      then 2 -- Unlambda
+      else if "-s"`elem`opt
+        then 1 -- SKI
+        else 0 -- Lambda
   if null fn
-    then if "-s"`elem`opt
-      then interactive (prim,prim :: Save Combi)
-      else interactive (prim,prim :: Save Lambda)
+    then case mode of
+      0 -> interactive (prim,prim :: Save Lambda)
+      1 -> interactive (prim,prim :: Save Combi)
+      2 -> interactive (prim,prim :: Save Unlambda)
     else do
       str <- readFile $ head fn
-      if "-s"`elem`opt
-        then run opt $ do
-          u <- parseSource (head fn) str
-          indexing u :: Indexed Combi
-        else run opt $ do
+      case mode of
+        0 -> run opt $ do
           u <- parseSource (head fn) str
           indexing u :: Indexed Lambda
+        1 -> run opt $ do
+          u <- parseSource (head fn) str
+          indexing u :: Indexed Combi
+        2 -> run opt $ do
+          u <- parseSource (head fn) str
+          indexing u :: Indexed Unlambda
 
 run :: Store s => [String] -> Indexed s -> IO ()
 run opt e = case e of
